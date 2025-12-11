@@ -1,0 +1,13 @@
+[project]
+name = "goland-ia"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.124.2",
+    "ipython>=9.8.0",
+    "langgraph>=1.0.4",
+    "typing-extensions>=4.15.0",
+    "uvicorn>=0.38.0",
+]
