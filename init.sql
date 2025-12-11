@@ -65,7 +65,3 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS chat_messages_session_id_idx 
 ON chat_messages(session_id);
 
--- Índice para ordenar mensajes por fecha
-CREATE INDEX IF NOT EXISTS chat_messages_created_at_idx 
-ON chat_messages(created_at);
-
