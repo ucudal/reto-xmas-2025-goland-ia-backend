@@ -51,7 +51,7 @@ CREATE INDEX IF NOT EXISTS chat_sessions_metadata_idx
 ON chat_sessions USING GIN (metadata);
 
 -- 2. Tabla chat_messages: Guarda el historial de conversación del usuario
-CREATE TYPE sender_type AS ENUM ('user', 'assistant', 'system');
+CREATE TYPE IF NOT EXISTS sender_type AS ENUM ('user', 'assistant', 'system');
 
 CREATE TABLE IF NOT EXISTS chat_messages (
     id SERIAL PRIMARY KEY,
