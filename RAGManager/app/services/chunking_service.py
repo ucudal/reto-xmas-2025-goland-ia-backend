@@ -1,27 +1,23 @@
-from typing import List
-
-from langchain_core.documents import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
-def document_to_chunks(document: Document, chunk_size: int, chunk_overlap: int) -> List[Document]:
+def split_documents(documents):
     """
-    Placeholder function - to be implemented later.
-
-    This function will:
-    1. Split the LangChain Document into smaller chunks
-    2. Use a text splitter (e.g., RecursiveCharacterTextSplitter) with the specified parameters
-    3. Return a list of Document chunks
-
+    Split a list of documents into smaller chunks.
+    
     Args:
-        document: LangChain Document to be chunked
-        chunk_size: Maximum size of each chunk in characters
-        chunk_overlap: Number of characters to overlap between chunks
-
+        documents: List of documents to split
+        
     Returns:
-        List[Document]: List of LangChain Document chunks
-
-    Raises:
-        NotImplementedError: This function is not yet implemented
+        List of split documents (chunks)
     """
-    raise NotImplementedError("This function will be implemented later")
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=100,
+        add_start_index=True
+    )
+    
+    all_splits = text_splitter.split_documents(documents)
+    
+    return all_splits
 
