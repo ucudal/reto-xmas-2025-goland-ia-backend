@@ -20,3 +20,4 @@ def split_documents(documents):
     all_splits = text_splitter.split_documents(documents)
     
     return all_splits
+
