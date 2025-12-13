@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator, model_validator
 from typing import Optional
+from urllib.parse import quote_plus
 import logging
 
 logger = logging.getLogger(__name__)
@@ -70,8 +71,11 @@ class Settings(BaseSettings):
         
         # Build database_url if not provided
         if not self.database_url:
+            # URL-encode username and password to handle special characters
+            encoded_user = quote_plus(self.postgres_user)
+            encoded_password = quote_plus(self.postgres_password)
             self.database_url = (
-                f"postgresql://{self.postgres_user}:{self.postgres_password}"
+                f"postgresql://{encoded_user}:{encoded_password}"
                 f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
             )
         
@@ -79,18 +83,22 @@ class Settings(BaseSettings):
 
     @property
     def postgres_dsn(self) -> str:
-        """Returns the PostgreSQL DSN"""
+        """Returns the PostgreSQL DSN with URL-encoded credentials"""
+        encoded_user = quote_plus(self.postgres_user)
+        encoded_password = quote_plus(self.postgres_password)
         return (
-            f"postgresql://{self.postgres_user}:{self.postgres_password}"
+            f"postgresql://{encoded_user}:{encoded_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
     @property
     def rabbitmq_url(self) -> str:
-        """Returns the RabbitMQ connection URL"""
-        host = self.rabbitmq_host.strip() if self.rabbitmq_host else "localhost"
-        url = f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password}@{host}:{self.rabbitmq_port}/"
-        logger.debug(f"RabbitMQ URL: amqp://{self.rabbitmq_user}:***@{host}:{self.rabbitmq_port}/")
+        """Returns the RabbitMQ connection URL with URL-encoded credentials"""
+        # Use already-normalized host from normalize_rabbitmq_host validator
+        encoded_user = quote_plus(self.rabbitmq_user)
+        encoded_password = quote_plus(self.rabbitmq_password)
+        url = f"amqp://{encoded_user}:{encoded_password}@{self.rabbitmq_host}:{self.rabbitmq_port}/"
+        logger.debug(f"RabbitMQ URL: amqp://{encoded_user}:***@{self.rabbitmq_host}:{self.rabbitmq_port}/")
         return url
 
 
