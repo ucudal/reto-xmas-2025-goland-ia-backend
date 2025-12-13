@@ -1,22 +1,32 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
 
-# Armar la URL de conexión
-DATABASE_URL = (
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}"
-    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+def _req(name: str) -> str:
+    v = os.getenv(name)
+    if not v:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return v
+
+
+DB_HOST = _req("DB_HOST")
+DB_PORT = int(_req("DB_PORT"))
+DB_NAME = _req("DB_NAME")
+DB_USER = _req("DB_USER")
+DB_PASSWORD = _req("DB_PASSWORD")
+
+
+DATABASE_URL = URL.create(
+    "postgresql+psycopg2",
+    username=DB_USER,
+    password=DB_PASSWORD,
+    host=DB_HOST,
+    port=DB_PORT,
+    database=DB_NAME,
 )
 
-
-engine = create_engine(DATABASE_URL) #aca se guarda la config para la conexion a la db
-SessionLocal = sessionmaker(bind=engine) #clase para crear sesiones de conexion a la db (db = SessionLocal())
-
-Base = declarative_base() #clase base para crear los modelos (tablas) de la db y mapearlos con el ORM
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
