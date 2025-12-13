@@ -25,7 +25,7 @@ def _build_database_url() -> URL:
     db_password = _req("DB_PASSWORD")
 
     return URL.create(
-        "postgresqlpsycopg2",
+        "postgresql+psycopg2",
         username=db_user,
         password=db_password,
         host=db_host,
