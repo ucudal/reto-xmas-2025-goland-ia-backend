@@ -17,10 +17,10 @@ class ChatSession(Base):
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
-        server_default=func.uuid_generate_v4()
+        server_default=func.gen_random_uuid()
     )
     created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
-    metadata = Column(JSON)
+    meta = Column("metadata", JSON)
 
     messages = relationship(
         "ChatMessage",
