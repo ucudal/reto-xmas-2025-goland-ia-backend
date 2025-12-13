@@ -1,9 +1,12 @@
 import io
 import logging
 
+import certifi
 import pdfplumber
+import urllib3
 from langchain_core.documents import Document
 from minio import Minio
+from urllib3.util import Timeout as UrllibTimeout
 
 from app.core.config import settings
 
@@ -56,11 +59,32 @@ def _extract_tables_safely(page, page_num: int) -> str:
 
 
 def get_minio_client() -> Minio:
+    """Create a MinIO client with proper timeout and retry configuration."""
+    # Configure timeout: 10s connect, 30s read
+    timeout = UrllibTimeout(connect=10, read=30)
+
+    # Configure retry: 3 attempts with backoff for server errors
+    retry = urllib3.Retry(
+        total=3,
+        backoff_factor=0.2,
+        status_forcelist=[500, 502, 503, 504],
+    )
+
+    # Create PoolManager with timeout, retry, and CA bundle
+    http_client = urllib3.PoolManager(
+        timeout=timeout,
+        retries=retry,
+        maxsize=10,
+        cert_reqs="CERT_REQUIRED",
+        ca_certs=certifi.where(),
+    )
+
     return Minio(
         endpoint=settings.minio_endpoint,
         access_key=settings.minio_access_key,
         secret_key=settings.minio_secret_key,
         secure=settings.minio_secure,
+        http_client=http_client,
     )
 
 def pdf_to_document(
