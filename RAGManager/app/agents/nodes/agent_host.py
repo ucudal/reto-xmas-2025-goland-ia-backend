@@ -31,8 +31,9 @@ def agent_host(state: AgentState) -> AgentState:
     prompt = state.get("prompt", "")
     chat_session_id = state.get("chat_session_id")
 
-    db = SessionLocal()
+    db = None
     try:
+        db = SessionLocal()
         # Get or create chat session
         chat_session = None
         if chat_session_id:
@@ -91,13 +92,15 @@ def agent_host(state: AgentState) -> AgentState:
 
     except Exception as e:
         # Rollback on error
-        db.rollback()
+        if db is not None:
+            db.rollback()
         logger.error(f"Error in agent_host: {e}", exc_info=True)
         # Set error state but don't fail completely
         updated_state["chat_session_id"] = None
         updated_state["chat_messages"] = None
         updated_state["initial_context"] = prompt
     finally:
-        db.close()
+        if db is not None:
+            db.close()
 
     return updated_state
