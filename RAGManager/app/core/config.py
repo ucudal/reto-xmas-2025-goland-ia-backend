@@ -27,9 +27,16 @@ class Settings(BaseSettings):
     embedding_dimension: int = 1536
 
     # Guardrails Configuration
-    guardrails_jailbreak_threshold: float = 0.9  # Detection threshold (lower is more sensitive)
-    guardrails_device: str = "cpu"  # Device for model inference (cpu, cuda, mps)
-
+    guardrails_jailbreak_threshold: float = Field(
+        default=0.9,
+        ge=0.0,
+        le=1.0,
+        description="DetectJailbreak threshold; verify semantics in guardrails-ai (higher vs lower sensitivity).",
+    )
+    guardrails_device: Literal["cpu", "cuda", "mps"] = Field(
+        default="cpu",
+        description="Device for model inference.",
+    )
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
