@@ -116,8 +116,12 @@ def pdf_to_document(
     try:
         pdf = pdfplumber.open(io.BytesIO(pdf_bytes))
     except Exception as e:
-        logger.error(f"Failed to open PDF '{object_name}': {e} (possibly corrupted or password-protected)")
-        return documents
+        logger.error(
+            "Failed to open PDF '%s': %s (possibly corrupted or password-protected)",
+            object_name,
+            e,
+        )
+        raise ValueError(f"Failed to open PDF '{object_name}': {e}") from e
 
     try:
         for page_num, page in enumerate(pdf.pages, start=1):
