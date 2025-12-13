@@ -32,7 +32,10 @@ def get_db():
 
 def init_db():
     """
-    Initialize database and verify PGVector extension is available.
+    Initialize database prerequisites and verify the pgvector extension is installed.
+    
+    Raises:
+        RuntimeError: If the pgvector PostgreSQL extension is not installed.
     """
     with engine.connect() as conn:
         # Check if pgvector extension exists
@@ -43,4 +46,3 @@ def init_db():
             raise RuntimeError(
                 "PGVector extension is not installed. Please run the init.sql script."
             )
-

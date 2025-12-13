@@ -43,7 +43,17 @@ class Settings(BaseSettings):
     )
 
     def model_post_init(self, __context):
-        """Validation after initializing the model"""
+        """
+        Normalize and validate configuration values after the model is initialized.
+        
+        If `database_url` is empty, constructs and assigns a PostgreSQL DSN to `database_url`.
+        If `rabbitmq_host` is empty or only whitespace, sets it to "localhost" and logs a warning.
+        If `rabbitmq_host` equals "rabbitmq", replaces it with "localhost" and logs a warning.
+        If `rabbitmq_user` or `rabbitmq_password` is missing, logs an error.
+        
+        Parameters:
+            __context: Initialization context passed by the settings model (ignored by this hook).
+        """
         # Build database_url if not provided
         if not self.database_url:
             self.database_url = (
@@ -69,7 +79,12 @@ class Settings(BaseSettings):
 
     @property
     def postgres_dsn(self) -> str:
-        """Returns the PostgreSQL DSN"""
+        """
+        Construct a PostgreSQL Data Source Name (DSN) from the instance's database settings.
+        
+        Returns:
+            PostgreSQL DSN string in the form "postgresql://user:password@host:port/dbname".
+        """
         return (
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
@@ -77,7 +92,12 @@ class Settings(BaseSettings):
 
     @property
     def rabbitmq_url(self) -> str:
-        """Returns the RabbitMQ connection URL"""
+        """
+        Constructs the AMQP connection URL for RabbitMQ from configured credentials and network settings.
+        
+        Returns:
+            str: AMQP URL in the form `amqp://<user>:<password>@<host>:<port>/`. If the configured host is empty or only whitespace, `"localhost"` is used.
+        """
         host = self.rabbitmq_host.strip() if self.rabbitmq_host else "localhost"
         url = f"amqp://{self.rabbitmq_user}:{self.rabbitmq_password}@{host}:{self.rabbitmq_port}/"
         logger.debug(f"RabbitMQ URL: amqp://{self.rabbitmq_user}:***@{host}:{self.rabbitmq_port}/")
@@ -85,4 +105,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

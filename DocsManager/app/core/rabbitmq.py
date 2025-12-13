@@ -12,11 +12,24 @@ class RabbitMQConnection:
     """Handles connection and operations with RabbitMQ"""
 
     def __init__(self):
+        """
+        Initialize the RabbitMQConnection instance.
+        
+        Sets up container attributes used to hold the pika connection and channel; both are initialized to None and will be created when connect() is called.
+        """
         self.connection: Optional[pika.BlockingConnection] = None
         self.channel: Optional[pika.channel.Channel] = None
 
     def connect(self):
-        """Establishes connection with RabbitMQ"""
+        """
+        Establishes a BlockingConnection to RabbitMQ and creates a channel on the instance.
+        
+        Sets self.connection to a pika.BlockingConnection (using settings.rabbitmq_url) and self.channel to the connection's channel. Re-raises connection-related and other unexpected exceptions.
+        
+        Raises:
+            AMQPConnectionError: if the client cannot connect to the RabbitMQ broker.
+            Exception: for other unexpected errors during connection setup.
+        """
         try:
             url = settings.rabbitmq_url
             logger.info(f"Connecting to RabbitMQ at {settings.rabbitmq_host}:{settings.rabbitmq_port}")
@@ -38,7 +51,9 @@ class RabbitMQConnection:
             raise
 
     def close(self):
-        """Closes the connection"""
+        """
+        Close the channel and connection to RabbitMQ if they exist and are open.
+        """
         if self.channel and not self.channel.is_closed:
             self.channel.close()
             logger.info("RabbitMQ channel closed")
@@ -47,14 +62,33 @@ class RabbitMQConnection:
             logger.info("RabbitMQ connection closed")
 
     def declare_queue(self, queue_name: str, durable: bool = True):
-        """Declares a queue"""
+        """
+        Ensure a channel exists and declare the named queue on the RabbitMQ server.
+        
+        If no channel is present this method establishes a connection and channel, then declares the queue with the given durability so messages are persisted across broker restarts when durable is True.
+        
+        Parameters:
+            queue_name (str): Name of the queue to declare.
+            durable (bool): Whether the queue should survive broker restarts (defaults to True).
+        """
         if not self.channel:
             self.connect()
         self.channel.queue_declare(queue=queue_name, durable=durable)
         logger.info(f"Queue '{queue_name}' declared")
 
     def publish_message(self, queue_name: str, message: dict):
-        """Publishes a message to the queue"""
+        """
+        Publish a JSON-serializable dictionary to the specified RabbitMQ queue.
+        
+        Serializes `message` to JSON, ensures the channel is open and the queue exists, and publishes the message with delivery_mode=2 (persistent).
+        
+        Parameters:
+            queue_name (str): Name of the RabbitMQ queue to publish to.
+            message (dict): Message payload that will be serialized to JSON.
+        
+        Raises:
+            Exception: Propagates any error encountered during connection, queue declaration, serialization, or publish.
+        """
         try:
             if not self.channel:
                 self.connect()
@@ -84,4 +118,3 @@ class RabbitMQConnection:
 
 # Global instance
 rabbitmq = RabbitMQConnection()
-

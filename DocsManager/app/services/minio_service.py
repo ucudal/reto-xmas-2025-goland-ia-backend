@@ -15,6 +15,11 @@ class MinIOService:
 
     def __init__(self):
         # Parse endpoint to extract host and port if necessary
+        """
+        Initialize the MinIOService by configuring a Minio client and ensuring the configured bucket exists.
+        
+        Reads MinIO connection settings, normalizes the endpoint (removing URL scheme), creates a Minio client with the configured credentials and SSL setting, stores the target bucket name, and invokes bucket existence verification/creation.
+        """
         parsed = urlparse(settings.minio_endpoint)
         endpoint = parsed.netloc or parsed.path
         # Remove https:// if present
@@ -30,7 +35,13 @@ class MinIOService:
         self._ensure_bucket_exists()
 
     def _ensure_bucket_exists(self):
-        """Verifies that the bucket exists, creates it if it doesn't"""
+        """
+        Ensure the configured bucket exists on the MinIO server, creating it if missing.
+        
+        Raises:
+            S3Error: If an S3-related error occurs while checking or creating the bucket.
+            Exception: For other unexpected errors encountered during the operation.
+        """
         try:
             if not self.client.bucket_exists(self.bucket_name):
                 self.client.make_bucket(self.bucket_name)
@@ -46,15 +57,17 @@ class MinIOService:
 
     def upload_file(self, file_data: bytes, filename: str, content_type: str = "application/pdf") -> str:
         """
-        Uploads a file to MinIO
-
-        Args:
-            file_data: File content in bytes
-            filename: Original filename
-            content_type: MIME type of the file
-
+        Upload file bytes to MinIO and return the generated object name.
+        
+        Generates a UUID-based object name using the filename's extension, uploads the provided bytes to the configured bucket, and returns the stored object's name.
+        
+        Parameters:
+            file_data (bytes): File content.
+            filename (str): Original filename used to determine the file extension.
+            content_type (str): MIME type of the file; defaults to "application/pdf".
+        
         Returns:
-            File path in MinIO (object_name)
+            str: The generated object name stored in the bucket (for example, "<uuid>.<ext>").
         """
         try:
             # Generate a unique name for the file
@@ -83,13 +96,10 @@ class MinIOService:
 
     def download_file(self, object_name: str) -> bytes:
         """
-        Downloads a file from MinIO
-
-        Args:
-            object_name: Object name in MinIO
-
+        Download the object with the given name from the configured MinIO bucket.
+        
         Returns:
-            File content in bytes
+            bytes: The object's content as raw bytes.
         """
         try:
             response = self.client.get_object(bucket_name=self.bucket_name, object_name=object_name)
@@ -109,10 +119,14 @@ class MinIOService:
 
     def delete_file(self, object_name: str):
         """
-        Deletes a file from MinIO
-
-        Args:
-            object_name: Object name in MinIO
+        Remove the specified object from the configured MinIO bucket.
+        
+        Parameters:
+            object_name (str): Name or path of the object to delete within the bucket.
+        
+        Raises:
+            S3Error: If the MinIO client reports an S3-specific error during deletion.
+            Exception: For other unexpected errors encountered while attempting deletion.
         """
         try:
             self.client.remove_object(self.bucket_name, object_name)
@@ -127,4 +141,3 @@ class MinIOService:
 
 # Global instance
 minio_service = MinIOService()
-

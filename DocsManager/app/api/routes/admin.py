@@ -26,14 +26,17 @@ ALLOWED_EXTENSIONS = {".pdf"}
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """
-    Endpoint to upload a PDF document (FastApi 1 - Gestión de documentos)
-
-    Flow:
-    1. Validate file
-    2. Save to MinIO
-    3. Save metadata to PostgreSQL
-    4. Publish message to RabbitMQ
-    5. Return immediate response
+    Handle an uploaded PDF: validate, store in object storage, save metadata, enqueue a processing message, and return the created document metadata.
+    
+    Parameters:
+        file (UploadFile): The uploaded file. Must have a filename ending with `.pdf` and be no larger than 10 MB.
+    
+    Returns:
+        DocumentUploadResponse: The stored document's id, filename, status set to "processing", and upload timestamp.
+    
+    Raises:
+        HTTPException: 400 for validation errors (missing filename, disallowed extension, or file too large);
+                       500 for failures saving metadata or other internal errors.
     """
     try:
         # 1. Validate file
@@ -114,7 +117,18 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(document_id: int, db: Session = Depends(get_db)):
-    """Get metadata of a document"""
+    """
+    Retrieve metadata for a document by its ID.
+    
+    Parameters:
+        document_id (int): ID of the document to retrieve.
+    
+    Returns:
+        DocumentResponse: Contains `id`, `filename`, `minio_path`, and `uploaded_at`.
+    
+    Raises:
+        HTTPException: with status 404 if the document is not found.
+    """
     doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
 
     if not doc:
@@ -130,7 +144,12 @@ async def get_document(document_id: int, db: Session = Depends(get_db)):
 
 @router.get("", response_model=list[DocumentListResponse])
 async def list_documents(db: Session = Depends(get_db)):
-    """List all documents"""
+    """
+    Retrieve all documents ordered by upload time, newest first.
+    
+    Returns:
+        A list of DocumentListResponse objects each containing `id`, `filename`, and `uploaded_at`, ordered newest first.
+    """
     docs = db.query(DocumentModel).order_by(DocumentModel.uploaded_at.desc()).all()
 
     return [
@@ -145,7 +164,18 @@ async def list_documents(db: Session = Depends(get_db)):
 
 @router.delete("/{document_id}")
 async def delete_document(document_id: int, db: Session = Depends(get_db)):
-    """Delete a document from both MinIO and PostgreSQL"""
+    """
+    Delete a document and its stored object.
+    
+    Deletes the document record from the database and attempts to remove the associated object from MinIO (MinIO deletion is best-effort and will not prevent database removal if the object is already missing).
+    
+    Returns:
+        dict: Confirmation with keys `"message"` (success message) and `"document_id"` (the id of the deleted document).
+    
+    Raises:
+        HTTPException: 404 if the document_id does not exist.
+        HTTPException: 500 for other internal errors encountered during deletion.
+    """
     try:
         # 1. Get document info from database
         doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
@@ -179,4 +209,3 @@ async def delete_document(document_id: int, db: Session = Depends(get_db)):
         db.rollback()
         logger.error(f"Error deleting document {document_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-

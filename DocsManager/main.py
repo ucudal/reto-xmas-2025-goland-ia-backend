@@ -18,7 +18,14 @@ app.include_router(admin.router)
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database and services on startup."""
+    """
+    Initialize application resources during startup.
+    
+    Initializes the database and imports the RabbitMQ module so it is available for later use. If any step fails, the original exception is re-raised to abort application startup.
+    
+    Raises:
+        Exception: If database initialization or module import fails.
+    """
     try:
         init_db()
         logging.info("Database initialized successfully")
@@ -33,12 +40,23 @@ async def startup_event():
 
 @app.get("/")
 async def root():
+    """
+    Return a simple JSON object identifying the API and its version.
+    
+    Returns:
+        dict: A dictionary with a 'message' key containing the API name and version string.
+    """
     return {"message": "Docs Manager API - FastApi 1"}
 
 app.include_router(base_router)
 
 @app.get("/health")
 def health_check():
+    """
+    Return a simple health status message for the API.
+    
+    Returns:
+        dict: JSON object with a `message` field indicating service status (e.g. `{"message": "200 corriendo..."}`).
+    """
     return {"message": "200 corriendo..."}
-
 
