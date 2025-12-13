@@ -11,32 +11,37 @@ def _req(name: str) -> str:
     return v
 
 
-DB_HOST = _req("DB_HOST")
 
-try:
-    DB_PORT = int(_req("DB_PORT"))
-except ValueError:
-    raise RuntimeError(f"DB_PORT must be a valid integer, got: {os.getenv('DB_PORT')}")
+def _build_database_url() -> URL:
+    db_host = _req("DB_HOST")
+    try:
+        db_port = int(_req("DB_PORT"))
+    except ValueError as err:
+        raise RuntimeError(
+            f"DB_PORT must be a valid integer, got: {os.getenv('DB_PORT')}"
+        ) from err
+    db_name = _req("DB_NAME")
+    db_user = _req("DB_USER")
+    db_password = _req("DB_PASSWORD")
 
-DB_NAME = _req("DB_NAME")
-DB_USER = _req("DB_USER")
-DB_PASSWORD = _req("DB_PASSWORD")
+    return URL.create(
+        "postgresqlpsycopg2",
+        username=db_user,
+        password=db_password,
+        host=db_host,
+        port=db_port,
+        database=db_name,
+    )
 
+def get_engine():
+    return create_engine(_build_database_url(), pool_pre_ping=True)
 
-DATABASE_URL = URL.create(
-    "postgresql+psycopg2",
-    username=DB_USER,
-    password=DB_PASSWORD,
-    host=DB_HOST,
-    port=DB_PORT,
-    database=DB_NAME,
-)
-
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(
-bind=engine,
-autoflush=False,
-autocommit=False,
-expire_on_commit=False, )
+def get_sessionmaker():
+    return sessionmaker(
+        bind=get_engine(),
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+    )
 
 Base = declarative_base()
