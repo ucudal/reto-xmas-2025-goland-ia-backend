@@ -124,6 +124,11 @@ def pdf_to_document(
         raise ValueError(f"Failed to open PDF '{object_name}': {e}") from e
 
     try:
+        # Check for empty PDF
+        if not pdf.pages or len(pdf.pages) == 0:
+            logger.error(f"PDF '{object_name}' has no pages")
+            raise ValueError(f"PDF '{object_name}' is empty or has no readable pages")
+
         for page_num, page in enumerate(pdf.pages, start=1):
             try:
                 text = page.extract_text() or ""
