@@ -1,16 +1,14 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
-from sqlalchemy.exc import OperationalError
+
+from app.api.routes.base import router as base_router
+
 
 app = FastAPI()
 
+app.include_router(base_router)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/health")
-def health_check():
-   return {"message": "200 corriendo..."}
 
 
