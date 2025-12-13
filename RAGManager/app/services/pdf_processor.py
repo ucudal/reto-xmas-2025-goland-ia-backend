@@ -2,6 +2,7 @@ import io
 import pdfplumber
 from langchain_core.documents import Document
 from minio import Minio
+from minio.error import S3Error
 
 from app.core.config import settings
 
@@ -40,12 +41,33 @@ def pdf_to_document(
     documents: list[Document] = []
     
     # Download the PDF from MinIO into memory
-    response = minio_client.get_object(bucket_name, object_name)
     try:
-        pdf_bytes = response.read()
-    finally:
-        response.close()
-        response.release_conn()
+        response = minio_client.get_object(bucket_name, object_name)
+        try:
+            pdf_bytes = response.read()
+        finally:
+            response.close()
+            response.release_conn()
+    except S3Error as e:
+        error_code = e.code
+        if error_code == "NoSuchKey":
+            raise FileNotFoundError(
+                f"Object '{object_name}' not found in bucket '{bucket_name}'"
+            ) from e
+        elif error_code == "NoSuchBucket":
+            raise ValueError(
+                f"Bucket '{bucket_name}' does not exist"
+            ) from e
+        elif error_code in ("AccessDenied", "InvalidAccessKeyId", "SignatureDoesNotMatch"):
+            raise PermissionError(
+                f"Access denied to object '{object_name}' in bucket '{bucket_name}'. "
+                f"Check your MinIO credentials and permissions."
+            ) from e
+        else:
+            raise RuntimeError(
+                f"MinIO error while retrieving object '{object_name}' from bucket '{bucket_name}': "
+                f"{e.message}"
+            ) from e
 
     # Open PDF from bytes using pdfplumber
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
