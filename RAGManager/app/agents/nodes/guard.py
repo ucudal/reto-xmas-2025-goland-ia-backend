@@ -1,6 +1,5 @@
 """Nodo 2: Guard - Validates for malicious content."""
 
-<<<<<<< HEAD
 import logging
 
 from guardrails import Guard
@@ -20,26 +19,15 @@ _guard = Guard().use(
         on_fail="noop",  # Don't raise exceptions, handle via state flags
     )
 )
-=======
-from app.agents.state import AgentState
->>>>>>> main
 
 
 def guard(state: AgentState) -> AgentState:
     """
-<<<<<<< HEAD
     Guard node - Validates user input for malicious content using Guardrails DetectJailbreak.
 
     This node:
     1. Validates the prompt using Guardrails DetectJailbreak validator
     2. Sets is_malicious flag if jailbreak attempt is detected
-=======
-    Guard node - Validates user input for malicious content.
-
-    This node:
-    1. Analyzes the prompt for malicious patterns
-    2. Sets is_malicious flag
->>>>>>> main
     3. Sets error_message if malicious content is detected
 
     Args:
@@ -48,7 +36,6 @@ def guard(state: AgentState) -> AgentState:
     Returns:
         Updated state with is_malicious and error_message set
     """
-<<<<<<< HEAD
     updated_state = state.copy()
     prompt = state.get("prompt", "")
 
@@ -84,18 +71,5 @@ def guard(state: AgentState) -> AgentState:
         logger.error(f"Error during jailbreak detection: {e}")
         updated_state["is_malicious"] = False
         updated_state["error_message"] = None
-=======
-    # TODO: Implement malicious content detection
-    # This should:
-    # 1. Check for injection attacks, prompt injection, etc.
-    # 2. Use appropriate validation libraries or models
-    # 3. Set is_malicious = True if malicious content is detected
-    # 4. Set error_message with appropriate message
-
-    # Placeholder: For now, we'll assume all prompts are safe
-    updated_state = state.copy()
-    updated_state["is_malicious"] = False
-    updated_state["error_message"] = None
->>>>>>> main
 
     return updated_state
