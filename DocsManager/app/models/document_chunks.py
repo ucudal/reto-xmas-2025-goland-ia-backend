@@ -1,5 +1,5 @@
 
-from app.db_connection import Base
+from DocsManager.app.core.db_connection import Base
 from sqlalchemy import Column, Integer, Text, TIMESTAMP, ForeignKey, UniqueConstraint, func
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship

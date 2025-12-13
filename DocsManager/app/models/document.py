@@ -7,7 +7,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.db_connection import Base
+from DocsManager.app.core.db_connection import Base
 
 class Document(Base):
     __tablename__ = "documents"

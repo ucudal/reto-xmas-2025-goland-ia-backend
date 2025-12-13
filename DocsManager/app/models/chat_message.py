@@ -13,7 +13,7 @@ from pgvector.sqlalchemy import Vector
 
 from schemas.enums.sender_type import SenderType
 
-from app.db_connection import Base
+from DocsManager.app.core.db_connection import Base
 
 
 class ChatMessage(Base):
