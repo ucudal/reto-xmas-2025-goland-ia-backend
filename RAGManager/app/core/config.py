@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dimension: int = 1536
 
+    # Guardrails Configuration
+    guardrails_jailbreak_threshold: float = 0.9  # Detection threshold (lower is more sensitive)
+    guardrails_device: str = "cpu"  # Device for model inference (cpu, cuda, mps)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
