@@ -74,7 +74,7 @@ show_status() {
 # Función para limpiar todo
 clean_all() {
     echo -e "${RED}⚠️  ADVERTENCIA: Esto eliminará todos los datos de los contenedores${NC}"
-    read -p "¿Estás seguro? (yes/no): " confirm
+    read -r -p "¿Estás seguro? (yes/no): " confirm
     if [ "$confirm" == "yes" ]; then
         echo -e "${YELLOW}Limpiando...${NC}"
         docker-compose down -v

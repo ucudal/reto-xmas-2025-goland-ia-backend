@@ -4,7 +4,7 @@ Este proyecto contiene los servicios de backend para el Reto Goland IA.
 
 ## Estructura del Proyecto
 
-```
+```text
 reto-xmas-2025-goland-ia-backend/
 ├── docker-compose.yml          # Configuración de servicios (PostgreSQL, RabbitMQ, MinIO)
 ├── Dockerfile.pgvector         # Dockerfile para PostgreSQL con pgvector
@@ -16,6 +16,7 @@ reto-xmas-2025-goland-ia-backend/
 ## Servicios Disponibles
 
 ### 1. PostgreSQL con pgvector
+
 - **Puerto:** 5432
 - **Usuario:** postgres
 - **Contraseña:** postgres
@@ -23,18 +24,20 @@ reto-xmas-2025-goland-ia-backend/
 - **Extensiones:** vector, uuid-ossp
 
 ### 2. RabbitMQ
+
 - **Puerto AMQP:** 5672
 - **Puerto Management UI:** 15672
 - **Usuario:** guest
 - **Contraseña:** guest
-- **Management UI:** http://localhost:15672
+- **Management UI:** <http://localhost:15672>
 
 ### 3. MinIO (S3 Compatible)
+
 - **Puerto API:** 9000
 - **Puerto Web Console:** 9001
 - **Usuario:** minioadmin
 - **Contraseña:** minioadmin
-- **Console:** http://localhost:9001
+- **Console:** <http://localhost:9001>
 
 ## Inicio Rápido
 
