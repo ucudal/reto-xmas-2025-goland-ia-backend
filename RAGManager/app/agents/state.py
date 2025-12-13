@@ -14,6 +14,7 @@ class AgentState(TypedDict):
     # Input
     prompt: str  # Original user prompt
     chat_session_id: str | None  # UUID of the chat session (optional for first message)
+    user_id: str | None  # User ID for ownership validation
 
     # Nodo 1: Agent Host
     initial_context: str | None  # Context saved to PostgreSQL

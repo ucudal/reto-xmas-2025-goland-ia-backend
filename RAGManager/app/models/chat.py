@@ -15,6 +15,7 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, server_default="uuid_generate_v4()")
+    user_id = Column(Text, nullable=True, index=True)  # User ID for ownership validation
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
     metadata = Column(JSONB, nullable=True)
 
