@@ -34,26 +34,18 @@ def agent_host(state: AgentState) -> AgentState:
     db = SessionLocal()
     try:
         # Get or create chat session
+        chat_session = None
         if chat_session_id:
             try:
-                # Try to parse and find existing session
                 session_uuid = UUID(chat_session_id)
                 chat_session = db.query(ChatSession).filter(ChatSession.id == session_uuid).first()
-                
                 if not chat_session:
-                    # Session ID provided but doesn't exist, create new one
                     logger.warning(f"Chat session {chat_session_id} not found, creating new session")
-                    chat_session = ChatSession(id=uuid4())
-                    db.add(chat_session)
-                    db.flush()  # Flush to get the ID
             except (ValueError, TypeError):
-                # Invalid UUID format, create new session
                 logger.warning(f"Invalid chat_session_id format: {chat_session_id}, creating new session")
-                chat_session = ChatSession(id=uuid4())
-                db.add(chat_session)
-                db.flush()
-        else:
-            # No session ID provided, create new session (first message)
+        
+        # Create new session if needed
+        if not chat_session:
             chat_session = ChatSession(id=uuid4())
             db.add(chat_session)
             db.flush()
