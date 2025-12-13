@@ -2,6 +2,7 @@ import io
 import pdfplumber
 from langchain_core.documents import Document
 from minio import Minio
+from pdfminer.pdfparser import PDFSyntaxError
 
 from app.core.config import settings
 
@@ -47,35 +48,40 @@ def pdf_to_document(
         response.close()
         response.release_conn()
 
-    # Open PDF from bytes using pdfplumber
-    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        for page_num, page in enumerate(pdf.pages, start=1):
-            text = page.extract_text() or ""
+    # Open PDF from bytes using pdfplumber with validation
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            for page_num, page in enumerate(pdf.pages, start=1):
+                text = page.extract_text() or ""
 
-            # Extract tables and convert to text format
-            tables = page.extract_tables()
-            table_text = ""
-            for table in tables:
-                for row in table:
-                    table_text += " | ".join(str(cell) if cell else "" for cell in row) + "\n"
+                # Extract tables and convert to text format
+                tables = page.extract_tables()
+                table_text = ""
+                for table in tables:
+                    for row in table:
+                        table_text += " | ".join(str(cell) if cell else "" for cell in row) + "\n"
 
-            # Combine text and tables
-            full_content = text
-            if table_text:
-                full_content += f"\n\n[Tables]\n{table_text}"
+                # Combine text and tables
+                full_content = text
+                if table_text:
+                    full_content += f"\n\n[Tables]\n{table_text}"
 
-            doc = Document(
-                page_content=full_content,
-                metadata={
-                    "source": f"minio://{bucket_name}/{object_name}",
-                    "bucket": bucket_name,
-                    "object_name": object_name,
-                    "page": page_num,
-                    "total_pages": len(pdf.pages),
-                    "filename": object_name.split("/")[-1],
-                },
-            )
-            documents.append(doc)
+                doc = Document(
+                    page_content=full_content,
+                    metadata={
+                        "source": f"minio://{bucket_name}/{object_name}",
+                        "bucket": bucket_name,
+                        "object_name": object_name,
+                        "page": page_num,
+                        "total_pages": len(pdf.pages),
+                        "filename": object_name.split("/")[-1],
+                    },
+                )
+                documents.append(doc)
+    except PDFSyntaxError as e:
+        raise ValueError(f"Invalid PDF file format for '{object_name}': {e}") from e
+    except Exception as e:
+        raise ValueError(f"Failed to process PDF file '{object_name}': {e}") from e
 
     return documents
 
