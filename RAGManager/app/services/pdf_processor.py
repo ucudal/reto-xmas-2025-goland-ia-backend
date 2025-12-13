@@ -1,10 +1,58 @@
 import io
+import logging
+
 import pdfplumber
 from langchain_core.documents import Document
 from minio import Minio
 
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
+
+
+def _sanitize_cell(cell) -> str:
+    """Safely convert a cell value to string."""
+    if cell is None:
+        return ""
+    if isinstance(cell, (str, int, float, bool)):
+        return str(cell)
+    try:
+        return str(cell)
+    except Exception:
+        try:
+            return repr(cell)
+        except Exception:
+            return ""
+
+
+def _extract_tables_safely(page, page_num: int) -> str:
+    """Extract tables from a page with robust error handling."""
+    table_text = ""
+    try:
+        tables = page.extract_tables()
+        if not isinstance(tables, (list, tuple)):
+            logger.warning(f"Page {page_num}: extract_tables() returned non-iterable type {type(tables)}, skipping tables")
+            return ""
+
+        for table_idx, table in enumerate(tables):
+            if not isinstance(table, (list, tuple)):
+                logger.warning(f"Page {page_num}, Table {table_idx}: table is not iterable, skipping")
+                continue
+
+            for row_idx, row in enumerate(table):
+                try:
+                    if not isinstance(row, (list, tuple)):
+                        logger.warning(f"Page {page_num}, Table {table_idx}, Row {row_idx}: row is not iterable, skipping")
+                        continue
+                    table_text += " | ".join(_sanitize_cell(cell) for cell in row) + "\n"
+                except Exception as e:
+                    logger.warning(f"Page {page_num}, Table {table_idx}, Row {row_idx}: error processing row: {e}")
+                    continue
+
+    except Exception as e:
+        logger.warning(f"Page {page_num}: error extracting tables: {e}")
+
+    return table_text
 
 
 def get_minio_client() -> Minio:
@@ -37,27 +85,50 @@ def pdf_to_document(
     if minio_client is None:
         minio_client = get_minio_client()
 
+    # Validate object_name
+    if not object_name or not object_name.strip():
+        raise ValueError("object_name cannot be empty or whitespace")
+
     documents: list[Document] = []
-    
+
     # Download the PDF from MinIO into memory
-    response = minio_client.get_object(bucket_name, object_name)
+    # Note: For very large files, consider streaming to disk instead of loading entirely into memory
+    try:
+        response = minio_client.get_object(bucket_name, object_name)
+    except Exception as e:
+        logger.error(f"Failed to get object from MinIO - bucket: '{bucket_name}', object: '{object_name}': {e}")
+        raise ValueError(f"Failed to retrieve '{object_name}' from bucket '{bucket_name}': {e}") from e
+
     try:
         pdf_bytes = response.read()
+        # Optional: warn if file is very large (e.g., > 100MB)
+        file_size_mb = len(pdf_bytes) / (1024 * 1024)
+        if file_size_mb > 100:
+            logger.warning(f"Large PDF loaded into memory: {file_size_mb:.1f} MB for '{object_name}'")
+    except Exception as e:
+        logger.error(f"Failed to read PDF content from MinIO - bucket: '{bucket_name}', object: '{object_name}': {e}")
+        raise ValueError(f"Failed to read content of '{object_name}' from bucket '{bucket_name}': {e}") from e
     finally:
         response.close()
         response.release_conn()
 
     # Open PDF from bytes using pdfplumber
-    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+    try:
+        pdf = pdfplumber.open(io.BytesIO(pdf_bytes))
+    except Exception as e:
+        logger.error(f"Failed to open PDF '{object_name}': {e} (possibly corrupted or password-protected)")
+        return documents
+
+    try:
         for page_num, page in enumerate(pdf.pages, start=1):
-            text = page.extract_text() or ""
+            try:
+                text = page.extract_text() or ""
+            except Exception as e:
+                logger.warning(f"Page {page_num}: error extracting text: {e}")
+                text = ""
 
             # Extract tables and convert to text format
-            tables = page.extract_tables()
-            table_text = ""
-            for table in tables:
-                for row in table:
-                    table_text += " | ".join(str(cell) if cell else "" for cell in row) + "\n"
+            table_text = _extract_tables_safely(page, page_num)
 
             # Combine text and tables
             full_content = text
@@ -76,6 +147,8 @@ def pdf_to_document(
                 },
             )
             documents.append(doc)
+    finally:
+        pdf.close()
 
     return documents
 
