@@ -1,3 +1,6 @@
+from typing import Literal
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +14,11 @@ class Settings(BaseSettings):
     minio_secret_key: str
     minio_bucket: str
     minio_secure: bool = True
+    max_pdf_size_mb: int = Field(
+        default=100,
+        ge=1,
+        description="Maximum PDF file size in megabytes that can be loaded into memory.",
+    )
 
     # OpenAI Configuration
     openai_api_key: str

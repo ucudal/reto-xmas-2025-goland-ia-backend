@@ -31,11 +31,25 @@ def pdf_to_document(
 
     Returns:
         List of Document objects, one per page
+
+    Raises:
+        ValueError: If the PDF file exceeds the maximum allowed size
     """
     if bucket_name is None:
         bucket_name = settings.minio_bucket
     if minio_client is None:
         minio_client = get_minio_client()
+
+    # Check file size before loading into memory
+    stat = minio_client.stat_object(bucket_name, object_name)
+    file_size_mb = stat.size / (1024 * 1024)
+    max_size_mb = settings.max_pdf_size_mb
+
+    if file_size_mb > max_size_mb:
+        raise ValueError(
+            f"PDF file size ({file_size_mb:.2f} MB) exceeds maximum allowed size ({max_size_mb} MB). "
+            f"Please use a smaller file or increase the max_pdf_size_mb setting."
+        )
 
     documents: list[Document] = []
     
