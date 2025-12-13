@@ -59,13 +59,10 @@ def create_agent_graph() -> StateGraph:
         "guard",
         route_after_guard,
         {
-            "malicious": END,  # End with error if malicious
-            "continue": "fallback_inicial",  # Continue to fallback_inicial if valid
+            "malicious": "fallback_inicial",  # go to fallback_inicial if malicious
+            "continue": "parafraseo",  # Continue to parafraseo if valid
         },
     )
-
-    # fallback_inicial -> parafraseo
-    workflow.add_edge("fallback_inicial", "parafraseo")
 
     # parafraseo -> retriever
     workflow.add_edge("parafraseo", "retriever")
@@ -77,17 +74,16 @@ def create_agent_graph() -> StateGraph:
     # Note: Primary LLM is called within context_builder node
     workflow.add_edge("context_builder", "generator")
 
-    # generator -> fallback_final
-    workflow.add_edge("generator", "fallback_final")
+    # generator -> guard
+    workflow.add_edge("generator", "guard")
 
-    # fallback_final -> conditional routing
+    # guard -> conditional routing
     workflow.add_conditional_edges(
-        "fallback_final",
-        route_after_fallback_final,
+        "guard",
+        route_after_guard,
         {
-            "risky": END,  # End with error if risky
-            "continue": END,  # End with final_response if valid
-            # Note: Final LLM is called within fallback_final node
+            "malicious": "fallback_inicial",  # go to fallback_final if malicious
+            "continue": END,  # if there's no error ends
         },
     )
 
