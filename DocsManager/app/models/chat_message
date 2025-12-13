@@ -1,0 +1,36 @@
+from sqlalchemy import (
+    Column,
+    Integer,
+    Text,
+    TIMESTAMP,
+    ForeignKey,
+    Enum,
+    func
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
+import enum
+
+from db_connection import Base
+
+class SenderType(enum.Enum):
+    user = "user"
+    assistant = "assistant"
+    system = "system"
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True)
+    session_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    sender = Column(Enum(SenderType, name="sender_type"), nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+
+    session = relationship("ChatSession", back_populates="messages")
