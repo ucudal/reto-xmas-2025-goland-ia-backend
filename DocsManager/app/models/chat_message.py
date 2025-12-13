@@ -10,14 +10,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
-import enum
 
-from db_connection import Base
+from schemas.enums.sender_type import SenderType
 
-class SenderType(enum.Enum):
-    user = "user"
-    assistant = "assistant"
-    system = "system"
+from app.db_connection import Base
 
 
 class ChatMessage(Base):

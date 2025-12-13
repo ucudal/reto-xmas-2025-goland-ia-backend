@@ -1,5 +1,5 @@
 
-from db_connection import Base
+from app.db_connection import Base
 from sqlalchemy import Column, Integer, Text, TIMESTAMP, ForeignKey, UniqueConstraint, func
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
@@ -21,6 +21,6 @@ class DocumentChunk(Base):
     chunk_index = Column(Integer, nullable=False)
     content = Column(Text, nullable=False)
     embedding = Column(Vector(1536), nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=func.current_timestamp(), nullable=False)
 
     document = relationship("Document", back_populates="chunks")

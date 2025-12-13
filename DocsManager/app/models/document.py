@@ -7,7 +7,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from db_connection import Base
+from app.db_connection import Base
 
 class Document(Base):
     __tablename__ = "documents"
@@ -15,7 +15,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True)
     filename = Column(Text, nullable=False)
     minio_path = Column(Text, nullable=False)
-    uploaded_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    uploaded_at = Column(TIMESTAMP, server_default=func.current_timestamp(), nullable=False)
 
     chunks = relationship(
         "DocumentChunk",

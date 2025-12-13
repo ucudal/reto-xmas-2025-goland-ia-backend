@@ -12,7 +12,12 @@ def _req(name: str) -> str:
 
 
 DB_HOST = _req("DB_HOST")
-DB_PORT = int(_req("DB_PORT"))
+
+try:
+    DB_PORT = int(_req("DB_PORT"))
+except ValueError:
+    raise RuntimeError(f"DB_PORT must be a valid integer, got: {os.getenv('DB_PORT')}")
+
 DB_NAME = _req("DB_NAME")
 DB_USER = _req("DB_USER")
 DB_PASSWORD = _req("DB_PASSWORD")
@@ -27,6 +32,11 @@ DATABASE_URL = URL.create(
     database=DB_NAME,
 )
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(
+bind=engine,
+autoflush=False,
+autocommit=False,
+expire_on_commit=False, )
+
 Base = declarative_base()

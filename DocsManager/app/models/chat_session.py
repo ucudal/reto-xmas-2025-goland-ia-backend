@@ -6,9 +6,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from pgvector.sqlalchemy import Vector
-
-from db_connection import Base
+from app.db_connection import Base
 
 
 class ChatSession(Base):
