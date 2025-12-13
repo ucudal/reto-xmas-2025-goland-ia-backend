@@ -55,7 +55,7 @@ def pdf_to_document(
                 f"Object '{object_name}' not found in bucket '{bucket_name}'"
             ) from e
         elif error_code == "NoSuchBucket":
-            raise ValueError(
+            raise FileNotFoundError(
                 f"Bucket '{bucket_name}' does not exist"
             ) from e
         elif error_code in ("AccessDenied", "InvalidAccessKeyId", "SignatureDoesNotMatch"):
@@ -66,7 +66,7 @@ def pdf_to_document(
         else:
             raise RuntimeError(
                 f"MinIO error while retrieving object '{object_name}' from bucket '{bucket_name}': "
-                f"{e.message}"
+                f"{str(e)}"
             ) from e
 
     # Open PDF from bytes using pdfplumber
