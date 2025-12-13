@@ -68,22 +68,43 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
         )
 
         # 3. Save metadata to PostgreSQL
-        doc_model = DocumentModel(
-            filename=file.filename,
-            minio_path=minio_path,
-            uploaded_at=datetime.utcnow(),
-        )
-        db.add(doc_model)
-        db.commit()
-        db.refresh(doc_model)
-        document_id = doc_model.id
+        try:
+            doc_model = DocumentModel(
+                filename=file.filename,
+                minio_path=minio_path,
+                uploaded_at=datetime.utcnow(),
+            )
+            db.add(doc_model)
+            db.commit()
+            db.refresh(doc_model)
+            document_id = doc_model.id
 
-        if not document_id:
-            # If it fails, delete the file from MinIO
-            minio_service.delete_file(minio_path)
-            raise HTTPException(status_code=500, detail="Failed to save document metadata")
+            if not document_id:
+                # If it fails, delete the file from MinIO
+                minio_service.delete_file(minio_path)
+                raise HTTPException(status_code=500, detail="Failed to save document metadata")
 
-        # 4. Publish message to RabbitMQ
+        except Exception as e:
+            # Clean up MinIO file on any database error
+            try:
+                minio_service.delete_file(minio_path)
+                logger.info(f"Cleaned up MinIO file after DB error: {minio_path}")
+            except Exception as delete_error:
+                logger.error(f"Failed to delete MinIO file during cleanup: {delete_error}")
+            
+            # Rollback database transaction
+            db.rollback()
+            logger.error(f"Database error during document upload: {e}")
+            
+            # Re-raise as HTTPException if not already one
+            if isinstance(e, HTTPException):
+                raise
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to save document metadata: {str(e)}"
+            )
+
+        # 4. Publish message to RabbitMQ (only after successful DB commit)
         message = {
             "document_id": document_id,
             "minio_path": minio_path,
@@ -145,7 +166,7 @@ async def list_documents(db: Session = Depends(get_db)):
 
 @router.delete("/{document_id}")
 async def delete_document(document_id: int, db: Session = Depends(get_db)):
-    """Delete a document from both MinIO and PostgreSQL"""
+    """Delete a document from both PostgreSQL and MinIO"""
     try:
         # 1. Get document info from database
         doc = db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
@@ -155,20 +176,29 @@ async def delete_document(document_id: int, db: Session = Depends(get_db)):
 
         minio_path = doc.minio_path
 
-        # 2. Delete from MinIO (if file exists)
+        # 2. Delete from database first (inside transaction)
+        try:
+            # Delete chunks associated with the document (cascade will handle this)
+            db.delete(doc)
+            db.commit()
+            logger.info(f"Document {document_id} deleted from database")
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error deleting document {document_id} from database: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to delete document from database: {str(e)}"
+            )
+
+        # 3. Delete from MinIO as best-effort (after DB commit)
         try:
             minio_service.delete_file(minio_path)
             logger.info(f"Deleted file from MinIO: {minio_path}")
         except Exception as e:
             logger.warning(
-                f"File not found in MinIO (may have been deleted already): {e}"
+                f"Failed to delete file from MinIO (file may not exist): {e}"
             )
-            # Continue with database deletion even if MinIO file doesn't exist
-
-        # 3. Delete chunks associated with the document (cascade will handle this)
-        # 4. Delete document from PostgreSQL
-        db.delete(doc)
-        db.commit()
+            # Do not rollback DB or raise error - MinIO cleanup is best-effort
 
         logger.info(f"Document {document_id} deleted successfully")
         return {"message": "Document deleted successfully", "document_id": document_id}
@@ -176,7 +206,6 @@ async def delete_document(document_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting document {document_id}: {e}")
+        logger.error(f"Unexpected error deleting document {document_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
