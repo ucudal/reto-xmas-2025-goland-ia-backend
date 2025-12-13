@@ -1,6 +1,5 @@
 import logging
 from fastapi import FastAPI
-from sqlalchemy.exc import OperationalError
 
 from app.api.routes import admin
 from app.core.database_connection import init_db
@@ -36,6 +35,7 @@ async def startup_event():
 async def root():
     return {"message": "Docs Manager API - FastApi 1"}
 
+app.include_router(base_router)
 
 @app.get("/health")
 def health_check():
