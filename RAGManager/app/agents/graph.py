@@ -18,7 +18,7 @@ from app.agents.routing import (
     route_after_guard_inicial,
 )
 from app.agents.state import AgentState
-
+from app.agents.routing import route_after_guard
 
 def create_agent_graph() -> StateGraph:
     """
@@ -79,9 +79,8 @@ def create_agent_graph() -> StateGraph:
     # retriever -> context_builder
     workflow.add_edge("retriever", "context_builder")
 
-    # context_builder -> generator
-    # Note: Primary LLM is called within context_builder node
-    workflow.add_edge("context_builder", "generator")
+    # context_builder -> guard
+    workflow.add_edge("context_builder", "guard")
 
     # generator -> guard_final
     workflow.add_edge("generator", "guard_final")

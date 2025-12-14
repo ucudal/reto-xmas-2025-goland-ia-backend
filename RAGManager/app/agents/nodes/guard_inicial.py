@@ -37,7 +37,9 @@ def guard_inicial(state: AgentState) -> AgentState:
         Updated state with is_malicious and error_message set
     """
     updated_state = state.copy()
-    prompt = state.get("prompt", "")
+    messages = state.get("messages", [])
+    last_message = messages[-1] if messages else None
+    prompt = last_message.content if last_message else ""
 
     if not prompt:
         # Empty prompt is considered safe

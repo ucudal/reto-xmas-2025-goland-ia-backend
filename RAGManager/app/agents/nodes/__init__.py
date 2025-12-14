@@ -18,6 +18,4 @@ __all__ = [
     "parafraseo",
     "retriever",
     "context_builder",
-    "generator",
-    "fallback_final",
 ]
