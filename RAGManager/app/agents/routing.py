@@ -5,7 +5,7 @@ from app.agents.state import AgentState
 
 def route_after_guard(state: AgentState) -> str:
     """
-    Route after Guard node (Nodo 2) validation.
+    Route after Guard Inicial node (Nodo 2) validation.
 
     Determines the next step based on whether the prompt was flagged as malicious.
 

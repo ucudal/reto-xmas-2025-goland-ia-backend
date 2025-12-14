@@ -1,6 +1,14 @@
 """Nodo 1: Agent Host - Entry point that saves initial context."""
 
+import logging
+from uuid import UUID, uuid4
+
 from app.agents.state import AgentState
+from app.core.config import settings
+from app.core.database_connection import SessionLocal
+from app.models.chat import ChatMessage, ChatSession
+
+logger = logging.getLogger(__name__)
 
 
 def agent_host(state: AgentState) -> AgentState:
@@ -8,23 +16,18 @@ def agent_host(state: AgentState) -> AgentState:
     Agent Host node - Entry point for the agent flow.
 
     This node:
-    1. Receives the initial prompt
-    2. Saves initial context to PostgreSQL
-    3. Prepares state for validation
+    1. Receives the initial prompt and optional chat_session_id
+    2. Creates or retrieves chat session from PostgreSQL
+    3. Saves the user's message to the chat session
+    4. Retrieves all chat messages for the session
+    5. Prepares state for validation
 
     Args:
-        state: Agent state containing the user prompt
+        state: Agent state containing the user prompt and optional chat_session_id
 
     Returns:
-        Updated state with initial_context set
+        Updated state with chat_session_id, chat_messages, and initial_context set
     """
-    # TODO: Implement database connection and save initial context
-    # This should:
-    # 1. Connect to PostgreSQL database
-    # 2. Save the prompt and any metadata as initial context
-    # 3. Store the context_id or reference in initial_context
-
-    # Placeholder: For now, we'll just store the prompt as initial context
     updated_state = state.copy()
     initial_message = state["messages"][-1]
     updated_state["initial_context"] = (

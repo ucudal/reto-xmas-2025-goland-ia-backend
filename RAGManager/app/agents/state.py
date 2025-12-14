@@ -16,6 +16,7 @@ class AgentState(MessagesState):
 
     # Nodo 1: Agent Host
     initial_context: str | None  # Context saved to PostgreSQL
+    chat_messages: list[dict] | None  # List of all chat messages for the session
 
     # Nodo 2: Guard
     is_malicious: bool  # Flag indicating if prompt is malicious

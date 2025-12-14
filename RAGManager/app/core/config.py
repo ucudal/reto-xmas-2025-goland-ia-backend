@@ -1,3 +1,6 @@
+from typing import Literal
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +29,13 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dimension: int = 1536
 
+    # Chat Configuration
+    chat_message_limit: int = Field(
+        default=50,
+        ge=1,
+        description="Maximum number of chat messages to load per session (most recent messages)",
+    )
+
     # Guardrails Configuration
     guardrails_jailbreak_threshold: float = Field(
         default=0.9,
@@ -36,6 +46,12 @@ class Settings(BaseSettings):
     guardrails_device: Literal["cpu", "cuda", "mps"] = Field(
         default="cpu",
         description="Device for model inference.",
+    )
+    guardrails_fail_closed: bool = Field(
+        default=False,
+        description="If True, treat Guardrails errors as malicious/risky (fail-closed). "
+        "If False, allow requests when Guardrails fails (fail-open). "
+        "Default: False (fail-open for backward compatibility).",
     )
     model_config = SettingsConfigDict(
         env_file=".env",
