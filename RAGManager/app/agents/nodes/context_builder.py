@@ -1,6 +1,10 @@
 """Nodo 6: Context Builder - Enriches query with retrieved context."""
 
 from app.agents.state import AgentState
+from langchain_core.messages import SystemMessage
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-5-nano")
 
 
 def context_builder(state: AgentState) -> AgentState:
@@ -31,13 +35,18 @@ def context_builder(state: AgentState) -> AgentState:
     paraphrased = state.get("paraphrased_text", "")
     chunks = state.get("relevant_chunks", [])
 
-    # Build enriched query
-    context_section = "\n\n".join(chunks) if chunks else ""
-    enriched_query = f"{paraphrased}\n\nContext:\n{context_section}" if context_section else paraphrased
-    updated_state["enriched_query"] = enriched_query
+    # Build enriched query with context
+    context_section = "\n\n".join(chunks) if chunks else "No relevant context found."
+    
+    system_content = f"""You are a helpful assistant. Use the following context to answer the user's question.
+If the answer is not in the context, say you don't know.
 
-    # TODO: Call Primary LLM here
-    # updated_state["primary_response"] = call_primary_llm(enriched_query)
-    updated_state["primary_response"] = None
+Context:
+{context_section}"""
 
-    return updated_state
+    messages = [SystemMessage(content=system_content)] + state["messages"]
+
+    # Call Primary LLM
+    response = llm.invoke(messages)
+
+    return {"messages": [response]}

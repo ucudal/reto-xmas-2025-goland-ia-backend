@@ -26,6 +26,9 @@ def agent_host(state: AgentState) -> AgentState:
 
     # Placeholder: For now, we'll just store the prompt as initial context
     updated_state = state.copy()
-    updated_state["initial_context"] = state.get("prompt", "")
+    initial_message = state["messages"][-1]
+    updated_state["initial_context"] = (
+        initial_message.content if initial_message else ""
+    )
 
     return updated_state
