@@ -1,4 +1,4 @@
-"""Nodo 3: Fallback Inicial - Initial fallback processing."""
+"""Nodo 3: Fallback - Handles fallback processing from multiple workflow points."""
 
 import logging
 
