@@ -1,11 +1,11 @@
 [project]
-name = "goland-ia"
+name = "rag-manager"
 version = "0.1.0"
-description = "Add your description here"
+description = "RAG Manager for document processing"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12,<3.14"
 dependencies = [
-    "fastapi>=0.124.2",
+   "fastapi>=0.124.2",
     "ipython>=9.8.0",
     "langgraph>=1.0.4",
     "langchain-core>=0.3.0",
@@ -15,8 +15,6 @@ dependencies = [
     "psycopg2-binary>=2.9.0",
     "pgvector>=0.3.0",
     "pydantic-settings>=2.0.0",
-    "typing-extensions>=4.15.0",
-    "uvicorn>=0.38.0",
     "guardrails-ai>=0.5.10",
 ]
 
@@ -26,14 +24,9 @@ dev = [
 ]
 
 [tool.ruff]
-# Enable pyproject.toml support
-target-version = "py314"
+target-version = "py312"
 line-length = 120
-
-# Enable auto-fix
 fix = true
-
-# Exclude directories
 exclude = [
     ".git",
     ".venv",
@@ -45,7 +38,6 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-# Enable a comprehensive set of rules
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -57,27 +49,15 @@ select = [
     "C4",  # flake8-comprehensions
     "SIM", # flake8-simplify
 ]
-
 ignore = [
-    "E501",  # Line too long (handled by formatter)
+    "E501",  # Line too long
 ]
-
-# Allow autofix for all enabled rules
 fixable = ["ALL"]
 unfixable = []
-
-# Allow unused variables when underscore-prefixed
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
-# Use double quotes for strings (like Black)
 quote-style = "double"
-
-# Indent with spaces
 indent-style = "space"
-
-# Respect magic trailing commas
 skip-magic-trailing-comma = false
-
-# Automatically detect line ending
 line-ending = "auto"
