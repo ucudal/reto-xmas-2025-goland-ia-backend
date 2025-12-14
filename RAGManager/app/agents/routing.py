@@ -22,7 +22,7 @@ def route_after_guard(state: AgentState) -> str:
 
 def route_after_guard_final(state: AgentState) -> str:
     """
-    Route after Guard Final node validation.
+    Route after Guard Final node validation (PII detection in generated response).
 
     Determines the next step based on whether the generated response was flagged as risky (PII detected).
 

@@ -78,7 +78,7 @@ def create_agent_graph() -> StateGraph:
             "continue": END,  # if there's no error ends
         },
     )
-    
+
     # fallback -> END
     workflow.add_edge("fallback", END)
     # Compile the graph
