@@ -3,9 +3,9 @@
 from app.agents.state import AgentState
 
 
-def route_after_guard(state: AgentState) -> str:
+def route_after_guard_inicial(state: AgentState) -> str:
     """
-    Route after Guard node (Nodo 2) validation.
+    Route after Guard Inicial node validation.
 
     Determines the next step based on whether the prompt was flagged as malicious.
 
@@ -20,9 +20,9 @@ def route_after_guard(state: AgentState) -> str:
     return "continue"
 
 
-def route_after_fallback_final(state: AgentState) -> str:
+def route_after_guard_final(state: AgentState) -> str:
     """
-    Route after Fallback Final node (Nodo 8) validation.
+    Route after Guard Final node validation.
 
     Determines the next step based on whether the response was flagged as risky.
 

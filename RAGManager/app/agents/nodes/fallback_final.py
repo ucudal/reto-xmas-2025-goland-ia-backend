@@ -1,40 +1,30 @@
-"""Nodo 8: Fallback Final - Final validation for risky/sensitive content."""
+"""Nodo 8: Fallback Final - Stops processing when risky content is detected."""
+
+import logging
 
 from app.agents.state import AgentState
+
+logger = logging.getLogger(__name__)
 
 
 def fallback_final(state: AgentState) -> AgentState:
     """
-    Fallback Final node - Validates response for risky/sensitive content.
+    Fallback Final node - Stops processing when risky content is detected.
 
     This node:
-    1. Analyzes the generated response for risky/sensitive content
-    2. Sets is_risky flag
-    3. Sets error_message if risky content is detected
-    4. If valid, calls Final LLM to generate final response
+    1. Sets error message indicating that the information requested is classified or not free to know
+    2. Stops the flow by routing to END
 
     Args:
-        state: Agent state containing generated_response
+        state: Agent state containing the response flagged as risky
 
     Returns:
-        Updated state with is_risky, error_message, and final_response set
+        Updated state with error_message set, ready to route to END
     """
-    # TODO: Implement risky content detection and final LLM call
-    # This should:
-    # 1. Check generated_response for sensitive/risky content
-    # 2. Set is_risky = True if risky content is detected
-    # 3. Set error_message with appropriate message if risky
-    # 4. If not risky, call Final LLM with generated_response
-    # 5. Store Final LLM response in final_response
-
-    # Placeholder: For now, we'll assume all responses are safe
     updated_state = state.copy()
-    updated_state["is_risky"] = False
-    updated_state["error_message"] = None
 
-    # TODO: Call Final LLM here if not risky
-    # if not updated_state["is_risky"]:
-    #     updated_state["final_response"] = call_final_llm(updated_state["generated_response"])
-    updated_state["final_response"] = updated_state.get("generated_response")
+    # Set error message for risky content
+    updated_state["error_message"] = "The information requested is classified or not free to know."
+    logger.warning("Risky content detected. Stopping processing. Response content not logged for security.")
 
     return updated_state
