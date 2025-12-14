@@ -50,7 +50,7 @@ def guard_final(state: AgentState) -> AgentState:
         Updated state with is_risky and error_message set
     """
     updated_state = state.copy()
-    generated_response = state.get("generated_response", "")
+    generated_response = state["messages"][-1].content if state.get("messages") else ""
 
     if not generated_response:
         # Empty response is considered safe

@@ -46,7 +46,7 @@ def fallback(state: AgentState) -> AgentState:
         )
         system_message_content = (
             "Your job is to generate an error message in user's language for the user "
-            "explaining the database doesn't have the information to respond what the user asked"
+            "explaining the database doesn't have the information to answer the user's question"
         )
         
     # Generic Fallback (neither risky nor malicious)
@@ -56,7 +56,7 @@ def fallback(state: AgentState) -> AgentState:
         )
         system_message_content = (
             "Your job is to generate an error message in user's language for the user "
-            "explaining the database doesn't have the information to respond what the user asked"
+            "explaining the database doesn't have the information to answer the user's question"
         )
     
     messages = [
