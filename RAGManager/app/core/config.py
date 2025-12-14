@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dimension: int = 1536
 
+    # Chat Configuration
+    chat_message_limit: int = Field(
+        default=50,
+        ge=1,
+        description="Maximum number of chat messages to load per session (most recent messages)",
+    )
+
     # Guardrails Configuration
     guardrails_jailbreak_threshold: float = Field(
         default=0.9,
