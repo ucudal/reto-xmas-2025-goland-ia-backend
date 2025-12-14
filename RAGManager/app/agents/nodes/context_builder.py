@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI
 llm = ChatOpenAI(model="gpt-5-nano")
 
 
-def context_builder(state: AgentState) -> AgentState:
+def context_builder(state: AgentState) -> dict:
     """
     Context Builder node - Enriches query with retrieved context.
 
