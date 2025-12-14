@@ -43,8 +43,12 @@ def guard_inicial(state: AgentState) -> AgentState:
         Updated state with is_malicious and error_message set
     """
     updated_state = state.copy()
-    last_message = state["messages"][-1]
-    prompt = last_message.content if last_message else ""
+    if state["messages"]:
+        last_message = state["messages"][-1]
+        prompt = last_message.content if last_message else ""
+    else:
+        last_message = None
+        prompt = ""
 
     if not prompt:
         # Empty prompt is considered safe
@@ -77,7 +81,7 @@ def guard_inicial(state: AgentState) -> AgentState:
     except Exception as e:
         # Log error details for monitoring
         logger.error("Error during jailbreak detection", exc_info=True)
-        
+
         # Check if fail-closed mode is enabled
         if settings.guardrails_fail_closed:
             # Fail-closed: treat errors as malicious to prevent bypassing detection

@@ -1,12 +1,8 @@
 """Nodo 1: Agent Host - Entry point that saves initial context."""
 
 import logging
-from uuid import UUID, uuid4
 
 from app.agents.state import AgentState
-from app.core.config import settings
-from app.core.database_connection import SessionLocal
-from app.models.chat import ChatMessage, ChatSession
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +25,7 @@ def agent_host(state: AgentState) -> AgentState:
         Updated state with chat_session_id, chat_messages, and initial_context set
     """
     updated_state = state.copy()
-    initial_message = state["messages"][-1]
+    initial_message = state["messages"][-1] if state["messages"] else None
     updated_state["initial_context"] = (
         initial_message.content if initial_message else ""
     )
