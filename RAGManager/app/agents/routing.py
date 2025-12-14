@@ -18,3 +18,20 @@ def route_after_guard(state: AgentState) -> str:
     if state.get("is_malicious", False):
         return "malicious"
     return "continue"
+
+
+def route_after_guard_final(state: AgentState) -> str:
+    """
+    Route after Guard Final node validation (PII detection in generated response).
+
+    Determines the next step based on whether the generated response was flagged as risky (PII detected).
+
+    Args:
+        state: Current agent state
+
+    Returns:
+        "risky" if the response contains PII, "continue" otherwise
+    """
+    if state.get("is_risky", False):
+        return "risky"
+    return "continue"
