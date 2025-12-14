@@ -2,7 +2,7 @@ import logging
 from fastapi import FastAPI
 
 from app.api.routes import admin, base
-from app.core.database_connection import init_db
+from app.core.db_connection import init_db
 
 # Configure logging
 logging.basicConfig(

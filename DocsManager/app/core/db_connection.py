@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -9,7 +9,6 @@ def _req(name: str) -> str:
     if not v:
         raise RuntimeError(f"Missing required environment variable: {name}")
     return v
-
 
 
 def _build_database_url() -> URL:
@@ -33,15 +32,44 @@ def _build_database_url() -> URL:
         database=db_name,
     )
 
-def get_engine():
-    return create_engine(_build_database_url(), pool_pre_ping=True)
 
-def get_sessionmaker():
-    return sessionmaker(
-        bind=get_engine(),
-        autoflush=False,
-        autocommit=False,
-        expire_on_commit=False,
-    )
+# Create SQLAlchemy engine
+engine = create_engine(_build_database_url(), pool_pre_ping=True)
 
+# Create session factory
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    expire_on_commit=False,
+)
+
+# Base class for models
 Base = declarative_base()
+
+
+def get_db():
+    """
+    Database session dependency for FastAPI.
+    Yields a database session and ensures it's closed after use.
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def init_db():
+    """
+    Initialize database and verify PGVector extension is available.
+    """
+    with engine.connect() as conn:
+        # Check if pgvector extension exists
+        result = conn.execute(
+            text("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector')")
+        )
+        if not result.scalar():
+            raise RuntimeError(
+                "PGVector extension is not installed. Please run the init.sql script."
+            )

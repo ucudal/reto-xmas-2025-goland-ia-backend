@@ -4,7 +4,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, ForeignKey, Integer, Text, TIMESTAMP, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from app.core.database_connection import Base
+from app.core.db_connection import Base
 
 
 class Document(Base):

@@ -8,7 +8,7 @@ from app.schemas.document import (
     DocumentResponse,
     DocumentListResponse,
 )
-from app.core.database_connection import get_db
+from app.core.db_connection import get_db
 from app.models.document import Document as DocumentModel
 from app.services.minio_service import minio_service
 from app.core.rabbitmq import rabbitmq
