@@ -1,14 +1,14 @@
+# PDF processing utilities for extracting content from PDFs stored in MinIO.
+
 import io
 import logging
 
-import certifi
 import pdfplumber
-import urllib3
 from langchain_core.documents import Document
 from minio import Minio
-from urllib3.util import Timeout as UrllibTimeout
 
 from app.core.config import settings
+from app.services.minio_client import download_object
 
 logger = logging.getLogger(__name__)
 
@@ -58,35 +58,6 @@ def _extract_tables_safely(page, page_num: int) -> str:
     return table_text
 
 
-def get_minio_client() -> Minio:
-    """Create a MinIO client with proper timeout and retry configuration."""
-    # Configure timeout: 10s connect, 30s read
-    timeout = UrllibTimeout(connect=10, read=30)
-
-    # Configure retry: 3 attempts with backoff for server errors
-    retry = urllib3.Retry(
-        total=3,
-        backoff_factor=0.2,
-        status_forcelist=[500, 502, 503, 504],
-    )
-
-    # Create PoolManager with timeout, retry, and CA bundle
-    http_client = urllib3.PoolManager(
-        timeout=timeout,
-        retries=retry,
-        maxsize=10,
-        cert_reqs="CERT_REQUIRED",
-        ca_certs=certifi.where(),
-    )
-
-    return Minio(
-        endpoint=settings.minio_endpoint,
-        access_key=settings.minio_access_key,
-        secret_key=settings.minio_secret_key,
-        secure=settings.minio_secure,
-        http_client=http_client,
-    )
-
 def pdf_to_document(
     object_name: str,
     bucket_name: str | None = None,
@@ -106,35 +77,11 @@ def pdf_to_document(
     """
     if bucket_name is None:
         bucket_name = settings.minio_bucket
-    if minio_client is None:
-        minio_client = get_minio_client()
-
-    # Validate object_name
-    if not object_name or not object_name.strip():
-        raise ValueError("object_name cannot be empty or whitespace")
 
     documents: list[Document] = []
 
     # Download the PDF from MinIO into memory
-    # Note: For very large files, consider streaming to disk instead of loading entirely into memory
-    try:
-        response = minio_client.get_object(bucket_name, object_name)
-    except Exception as e:
-        logger.error(f"Failed to get object from MinIO - bucket: '{bucket_name}', object: '{object_name}': {e}")
-        raise ValueError(f"Failed to retrieve '{object_name}' from bucket '{bucket_name}': {e}") from e
-
-    try:
-        pdf_bytes = response.read()
-        # Optional: warn if file is very large (e.g., > 100MB)
-        file_size_mb = len(pdf_bytes) / (1024 * 1024)
-        if file_size_mb > 100:
-            logger.warning(f"Large PDF loaded into memory: {file_size_mb:.1f} MB for '{object_name}'")
-    except Exception as e:
-        logger.error(f"Failed to read PDF content from MinIO - bucket: '{bucket_name}', object: '{object_name}': {e}")
-        raise ValueError(f"Failed to read content of '{object_name}' from bucket '{bucket_name}': {e}") from e
-    finally:
-        response.close()
-        response.release_conn()
+    pdf_bytes = download_object(object_name, bucket_name, minio_client)
 
     # Open PDF from bytes using pdfplumber
     try:
@@ -184,37 +131,3 @@ def pdf_to_document(
         pdf.close()
 
     return documents
-
-def pdf_to_single_document(
-    object_name: str,
-    bucket_name: str | None = None,
-    minio_client: Minio | None = None,
-) -> Document:
-    """
-    Load a PDF file from MinIO and return a single Document with all pages combined.
-
-    Args:
-        object_name: Path/name of the PDF object in the bucket
-        bucket_name: Name of the MinIO bucket (defaults to settings.minio_bucket)
-        minio_client: Optional MinIO client (creates one if not provided)
-
-    Returns:
-        Single Document object with all content
-    """
-    if bucket_name is None:
-        bucket_name = settings.minio_bucket
-    documents = pdf_to_document(object_name, bucket_name, minio_client)
-
-    combined_content = "\n\n".join(doc.page_content for doc in documents)
-
-    return Document(
-        page_content=combined_content,
-        metadata={
-            "source": f"minio://{bucket_name}/{object_name}",
-            "bucket": bucket_name,
-            "object_name": object_name,
-            "filename": object_name.split("/")[-1],
-            "total_pages": len(documents),
-        },
-    )
-
