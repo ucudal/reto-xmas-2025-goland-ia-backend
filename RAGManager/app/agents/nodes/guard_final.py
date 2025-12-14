@@ -1,25 +1,37 @@
 """Nodo Guard Final - Validates generated response for PII (Personally Identifiable Information)."""
 
 import logging
-
-from guardrails import Guard
-from guardrails.hub import DetectPII
+from typing import TYPE_CHECKING
 
 from app.agents.state import AgentState
 
+if TYPE_CHECKING:
+    from guardrails import Guard
+
 logger = logging.getLogger(__name__)
 
-# Initialize Guard with DetectPII validator
+# Lazy initialization of Guard with DetectPII validator
 # Note: The validator must be installed via: guardrails hub install hub://guardrails/detect_pii
 # Also requires: presidio-analyzer and presidio-anonymizer
 # Common PII entities: EMAIL_ADDRESS, PHONE_NUMBER, PERSON, LOCATION, CREDIT_CARD, SSN, etc.
 # For full list see: https://microsoft.github.io/presidio/
-_guard = Guard().use(
-    DetectPII(
-        pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER", "PERSON", "LOCATION", "CREDIT_CARD", "SSN"],
-        on_fail="noop",  # Don't raise exceptions, handle via state flags
-    )
-)
+_guard: "Guard | None" = None
+
+
+def _get_guard() -> "Guard":
+    """Lazy initialization of Guard with DetectPII validator to prevent import-time crashes."""
+    global _guard
+    if _guard is None:
+        from guardrails import Guard
+        from guardrails.hub import DetectPII
+
+        _guard = Guard().use(
+            DetectPII(
+                pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER", "PERSON", "LOCATION", "CREDIT_CARD", "SSN"],
+                on_fail="noop",  # Don't raise exceptions, handle via state flags
+            )
+        )
+    return _guard
 
 
 def guard_final(state: AgentState) -> AgentState:
@@ -48,7 +60,7 @@ def guard_final(state: AgentState) -> AgentState:
 
     try:
         # Validate the generated response using Guardrails
-        validation_result = _guard.validate(generated_response)
+        validation_result = _get_guard().validate(generated_response)
 
         # Check if validation passed
         # The validator returns ValidationResult with outcome
@@ -64,14 +76,16 @@ def guard_final(state: AgentState) -> AgentState:
                 "PII detected in response. The generated content contains personally identifiable information "
                 "that cannot be shared."
             )
-            logger.warning(f"PII detected in generated response: {generated_response[:100]}...")
+            logger.warning(
+                "PII detected in generated response",
+                extra={"response_len": len(generated_response)},
+            )
 
     except Exception as e:
-        # If validation fails due to error, log it but don't block the request
-        # This is a safety measure - if Guardrails fails, we allow the request
-        # but log the error for monitoring
-        logger.error(f"Error during PII detection: {e}")
-        updated_state["is_risky"] = False
-        updated_state["error_message"] = None
+        # Fail-closed: If validation fails due to error, treat as risky
+        # This prevents bypassing PII detection through errors
+        logger.error("Error during PII detection", exc_info=True)
+        updated_state["is_risky"] = True
+        updated_state["error_message"] = f"PII detection error: {str(e)}"
 
     return updated_state

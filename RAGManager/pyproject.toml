@@ -15,9 +15,9 @@ dependencies = [
     "psycopg2-binary>=2.9.0",
     "pgvector>=0.3.0",
     "pydantic-settings>=2.0.0",
-    "typing-extensions>=4.15.0",
-    "uvicorn>=0.38.0",
-    "guardrails-ai>=0.5.10",
+    "guardrails-ai==0.5.10",
+    "presidio-analyzer",
+    "presidio-anonymizer",
 ]
 
 [project.optional-dependencies]
