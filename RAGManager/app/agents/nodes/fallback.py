@@ -39,11 +39,20 @@ def fallback(state: AgentState) -> AgentState:
             "that the response cannot be provided because it contains sensitive or private information."
         )
         
-    # Check for Malicious prompt (from guard_inicial) - Default fallback
-    else:
-        # Assuming is_malicious is True if we are here and not is_risky, or just a general fallback
+    # Check for Malicious prompt (from guard_inicial)
+    elif state.get("is_malicious"):
         logger.warning(
             "Defensive check triggered: Malicious prompt detected" 
+        )
+        system_message_content = (
+            "Your job is to generate an error message in user's language for the user "
+            "explaining the database doesn't have the information to respond what the user asked"
+        )
+        
+    # Generic Fallback (neither risky nor malicious)
+    else:
+        logger.info(
+            "Fallback triggered: Generic fallback (no risky/malicious flag)"
         )
         system_message_content = (
             "Your job is to generate an error message in user's language for the user "
