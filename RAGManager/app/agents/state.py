@@ -1,9 +1,9 @@
 """State schema definition for the LangGraph agent."""
 
-from typing import TypedDict
+from langgraph.graph import MessagesState
 
 
-class AgentState(TypedDict):
+class AgentState(MessagesState):
     """
     State schema for the agent graph.
 
@@ -12,7 +12,7 @@ class AgentState(TypedDict):
     """
 
     # Input
-    prompt: str  # Original user prompt
+    # prompt attribute removed as it is replaced by messages in MessagesState
 
     # Nodo 1: Agent Host
     initial_context: str | None  # Context saved to PostgreSQL
