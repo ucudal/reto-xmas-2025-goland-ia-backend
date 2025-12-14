@@ -1,6 +1,10 @@
 """Nodo 4: Parafraseo - Paraphrases user input."""
 
 from app.agents.state import AgentState
+from langchain_core.messages import SystemMessage
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-5-nano")
 
 
 def parafraseo(state: AgentState) -> AgentState:
@@ -24,9 +28,16 @@ def parafraseo(state: AgentState) -> AgentState:
     # 2. Improve clarity, adjust tone, or format as needed
     # 3. Set paraphrased_text with the result
 
-    # Placeholder: For now, we'll use the adjusted_text as-is
-    updated_state = state.copy()
-    text_to_paraphrase = state.get("adjusted_text") or state.get("prompt", "")
-    updated_state["paraphrased_text"] = text_to_paraphrase
+    # Paraphrase the last message using history
+    
+    system_instruction = """You are an expert at paraphrasing user questions to be standalone and clear, given the conversation history.
+Reformulate the last user message to be a self-contained query that includes necessary context from previous messages.
+Do not answer the question, just rewrite it."""
+
+    messages = [SystemMessage(content=system_instruction)] + state["messages"]
+    
+    response = llm.invoke(messages)
+    updated_state = state.copy()  # Create a copy of the state to update
+    updated_state["paraphrased_text"] = response.content
 
     return updated_state

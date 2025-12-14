@@ -1,9 +1,9 @@
 """State schema definition for the LangGraph agent."""
 
-from typing import TypedDict
+from langgraph.graph import MessagesState
 
 
-class AgentState(TypedDict):
+class AgentState(MessagesState):
     """
     State schema for the agent graph.
 
@@ -12,6 +12,7 @@ class AgentState(TypedDict):
     """
 
     # Input
+
     prompt: str  # Original user prompt
     chat_session_id: str | None  # UUID of the chat session (optional for first message)
     user_id: str | None  # User ID for ownership validation

@@ -18,20 +18,3 @@ def route_after_guard(state: AgentState) -> str:
     if state.get("is_malicious", False):
         return "malicious"
     return "continue"
-
-
-def route_after_fallback_final(state: AgentState) -> str:
-    """
-    Route after Fallback Final node (Nodo 8) validation.
-
-    Determines the next step based on whether the response was flagged as risky.
-
-    Args:
-        state: Current agent state
-
-    Returns:
-        "risky" if the response is risky, "continue" otherwise
-    """
-    if state.get("is_risky", False):
-        return "risky"
-    return "continue"
