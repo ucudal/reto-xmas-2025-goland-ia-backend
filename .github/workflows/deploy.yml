@@ -76,7 +76,6 @@ jobs:
       run: |
         echo "Waiting for deployment rollout to complete..."
         kubectl rollout status deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} --timeout=${{ env.DEPLOY_TIMEOUT }}
-        kubectl wait --for=condition=available deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} --timeout=${{ env.DEPLOY_TIMEOUT }}
         kubectl get deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
         kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }}
 
