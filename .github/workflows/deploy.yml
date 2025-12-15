@@ -160,7 +160,7 @@ jobs:
       run: |
         curl -H "Content-Type: application/json" \
           -X POST \
-          -d "{\"content\": \"Deploy exitoso en *${{ env.NAMESPACE }}* :rocket:\"}" \
+          -d "{\"content\": \"✅ **Deploy exitoso**\\n\\n**Servicio:** \\\\`${{ matrix.service.name }}\\\\`\\n**Imagen:** \\\\`${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }}\\\\`\\n**Namespace:** \\\\`${{ env.NAMESPACE }}\\\\`\\n**Autor:** ${{ github.actor }}\\n**Commit:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})\\n\\n[Ver ejecución en GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\\n\\n:rocket: ¡Todo salió bien!\"}" \
           https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk
 
   notify-failure:
@@ -179,5 +179,5 @@ jobs:
       run: |
         curl -H "Content-Type: application/json" \
           -X POST \
-          -d "{\"content\": \"Falló el deploy en *${{ env.NAMESPACE }}*. Revisa los logs en GitHub Actions.\"}" \
+          -d "{\"content\": \"❌ **Falló el deploy**\\n\\n**Servicio:** \\\\`${{ matrix.service.name }}\\\\`\\n**Imagen:** \\\\`${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }}\\\\`\\n**Namespace:** \\\\`${{ env.NAMESPACE }}\\\\`\\n**Autor:** ${{ github.actor }}\\n**Commit:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})\\n\\n[Ver ejecución en GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\\n\\n:warning: Revisa los logs para más detalles.\"}" \
           https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk
