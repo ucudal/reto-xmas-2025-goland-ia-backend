@@ -85,3 +85,5 @@ class RabbitMQConnection:
 # Global instance
 rabbitmq = RabbitMQConnection()
 
+
+

@@ -70,3 +70,5 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS chat_messages_session_id_idx 
 ON chat_messages(session_id);
 
+
+

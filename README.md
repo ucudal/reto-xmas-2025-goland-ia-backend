@@ -279,3 +279,5 @@ docker-compose ps
 
 Los servicios deberían mostrar "healthy" en la columna Status.
 
+
+
