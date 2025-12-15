@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY: crretoxmas2024.azurecr.io
   NAMESPACE: reto-xmas-2025-goland-ia-backend
-  ROLLOUT_TIMEOUT: 60s
+  ROLLOUT_TIMEOUT: 30s
   READY_CHECK_RETRIES: 20
   READY_CHECK_SLEEP: 15
 
@@ -74,6 +74,17 @@ jobs:
           api=${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }} \
           -n ${{ env.NAMESPACE }}
 
+    - name: Debug before rollout status
+      run: |
+        echo "=== Deployments ==="
+        kubectl get deployment -n ${{ env.NAMESPACE }}
+        echo "=== ReplicaSets ==="
+        kubectl get rs -n ${{ env.NAMESPACE }} --show-labels
+        echo "=== Deployment Describe ==="
+        kubectl describe deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
+        echo "=== Recent Events ==="
+        kubectl get events -n ${{ env.NAMESPACE }} --sort-by=.metadata.creationTimestamp | tail -20
+
     - name: Wait for deployment to be ready (robust)
       run: |
         set -e
@@ -102,6 +113,18 @@ jobs:
         echo "Deployment did not become ready in time"
         kubectl describe deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
         exit 1
+
+    - name: Debug after rollout status
+      if: failure()
+      run: |
+        echo "=== Deployments ==="
+        kubectl get deployment -n ${{ env.NAMESPACE }}
+        echo "=== ReplicaSets ==="
+        kubectl get rs -n ${{ env.NAMESPACE }} --show-labels
+        echo "=== Deployment Describe ==="
+        kubectl describe deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
+        echo "=== Recent Events ==="
+        kubectl get events -n ${{ env.NAMESPACE }} --sort-by=.metadata.creationTimestamp | tail -20
 
     - name: Verify pods
       if: success()
