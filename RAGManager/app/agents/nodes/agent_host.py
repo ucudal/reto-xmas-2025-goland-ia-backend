@@ -29,7 +29,8 @@ def agent_host(state: AgentState) -> AgentState:
         Updated state with chat_session_id, chat_messages, and initial_context set
     """
     updated_state = state.copy()
-    prompt = state.get("prompt", "")
+    
+    prompt = state["messages"][-1]
     chat_session_id = state.get("chat_session_id")
     user_id = state.get("user_id")
 

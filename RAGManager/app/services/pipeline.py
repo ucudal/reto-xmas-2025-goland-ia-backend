@@ -10,7 +10,7 @@ from app.services.pdf_processor import pdf_to_document
 logger = logging.getLogger(__name__)
 
 
-def process_pdf_pipeline(minio_url: str) -> int:
+def process_pdf_pipeline(object_name: str) -> int:
     """
     Orchestrates the PDF processing pipeline.
 
@@ -21,7 +21,7 @@ def process_pdf_pipeline(minio_url: str) -> int:
     4. Store in database (to be implemented)
 
     Args:
-        minio_url: URL pointing to the PDF file in MinIO
+        object_name: Path/name of the PDF object in the MinIO bucket
 
     Returns:
         int: document_id of the created document (mock value for now)
@@ -29,12 +29,12 @@ def process_pdf_pipeline(minio_url: str) -> int:
     Raises:
         NotImplementedError: If any of the pipeline stages are not yet implemented
     """
-    logger.info(f"Starting PDF processing pipeline for URL: {minio_url}")
+    logger.info(f"Starting PDF processing pipeline for object: {object_name}")
 
     try:
         # Stage 1: PDF to Document
         logger.info("Stage 1: Converting PDF to LangChain Document")
-        document = pdf_to_document(minio_url)
+        document = pdf_to_document(object_name)
         logger.info("Stage 1 completed successfully")
 
         # Stage 2: Document to Chunks
