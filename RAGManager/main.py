@@ -2,7 +2,7 @@ import logging
 from fastapi import FastAPI
 from sqlalchemy.exc import OperationalError
 
-from app.api.routes import documents
+from app.api.routes import chat, documents
 from app.core.database_connection import init_db
 
 # Configure logging
@@ -14,6 +14,7 @@ logging.basicConfig(
 app = FastAPI(title="RAG Manager API", version="0.1.0")
 
 # Include routers
+app.include_router(chat.router)
 app.include_router(documents.router)
 
 
