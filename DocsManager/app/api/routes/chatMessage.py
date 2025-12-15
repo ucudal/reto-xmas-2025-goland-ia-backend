@@ -1,19 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.db_connection import get_sessionmaker
+from app.core.db_connection import get_db
 from app.schemas.chatMessage import UserMessageIn, AssistantMessageOut
 from app.services.chatMessage import create_user_message
-
-SessionMaker = get_sessionmaker()
-
-
-def get_db():
-    db = SessionMaker()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 router = APIRouter(
