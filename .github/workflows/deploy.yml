@@ -72,16 +72,11 @@ jobs:
           api=${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }} \
           -n ${{ env.NAMESPACE }}
 
-    - name: Wait for rollout
-      timeout-minutes: 5
+    - name: Wait for new pods to be Ready
       run: |
-        kubectl rollout status deployment/${{ matrix.service.deployment }} \
-          -n ${{ env.NAMESPACE }} \
-          --timeout=${{ env.DEPLOY_TIMEOUT }} || {
-            echo "Deployment failed or timed out"
-            kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }}
-            exit 1
-          }
+        echo "Waiting for new pods to be Ready..."
+        kubectl wait --for=condition=Ready pod -l app=${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} --timeout=${{ env.DEPLOY_TIMEOUT }}
+        kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }}
 
     - name: Verify deployment
       if: success()
