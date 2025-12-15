@@ -36,3 +36,15 @@ class DocumentListResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class DocumentListPaginatedResponse(BaseModel):
+    """Paginated response for listing documents"""
+
+    documents: list[DocumentListResponse]
+    total: int
+    limit: int
+    offset: int
+
+    class Config:
+        from_attributes = True
+

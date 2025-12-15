@@ -7,6 +7,7 @@ from app.schemas.document import (
     DocumentUploadResponse,
     DocumentResponse,
     DocumentListResponse,
+    DocumentListPaginatedResponse,
 )
 from app.core.db_connection import get_db
 from app.models.document import Document as DocumentModel
@@ -149,19 +150,48 @@ async def get_document(document_id: int, db: Session = Depends(get_db)):
     )
 
 
-@router.get("", response_model=list[DocumentListResponse])
-async def list_documents(db: Session = Depends(get_db)):
-    """List all documents"""
-    docs = db.query(DocumentModel).order_by(DocumentModel.uploaded_at.desc()).all()
+@router.get("", response_model=DocumentListPaginatedResponse)
+async def list_documents(
+    limit: int = 10,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    """
+    List all documents with pagination
+    
+    Args:
+        limit: Maximum number of documents to return (default: 10)
+        offset: Number of documents to skip (default: 0)
+        db: Database session
+    
+    Returns:
+        Paginated list of documents with total count
+    """
+    # Get total count of documents
+    total = db.query(DocumentModel).count()
+    
+    # Get paginated documents
+    docs = (
+        db.query(DocumentModel)
+        .order_by(DocumentModel.uploaded_at.desc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
 
-    return [
-        DocumentListResponse(
-            id=doc.id,
-            filename=doc.filename,
-            uploaded_at=doc.uploaded_at,
-        )
-        for doc in docs
-    ]
+    return DocumentListPaginatedResponse(
+        documents=[
+            DocumentListResponse(
+                id=doc.id,
+                filename=doc.filename,
+                uploaded_at=doc.uploaded_at,
+            )
+            for doc in docs
+        ],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.delete("/{document_id}")
