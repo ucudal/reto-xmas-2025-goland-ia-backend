@@ -37,7 +37,9 @@ def guard(state: AgentState) -> AgentState:
         Updated state with is_malicious and error_message set
     """
     updated_state = state.copy()
-    prompt = state.get("prompt", "")
+    messages = state.get("messages", [])
+    last_message = messages[-1] if messages else None
+    prompt = last_message.content if last_message else ""
 
     if not prompt:
         # Empty prompt is considered safe
@@ -62,7 +64,7 @@ def guard(state: AgentState) -> AgentState:
             updated_state["error_message"] = (
                 "Jailbreak attempt detected. Your request contains content that violates security policies."
             )
-            logger.warning(f"Jailbreak attempt detected in prompt: {prompt[:100]}...")
+            logger.warning("Jailbreak attempt detected in prompt (len=%d)", len(prompt))
 
     except Exception as e:
         # If validation fails due to error, log it but don't block the request
