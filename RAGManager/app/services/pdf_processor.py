@@ -96,7 +96,7 @@ def pdf_to_document(
 
     try:
         # Check for empty PDF
-        if not pdf.pages or len(pdf.pages) == 0:
+        if not pdf.pages:
             logger.error(f"PDF '{object_name}' has no pages")
             raise ValueError(f"PDF '{object_name}' is empty or has no readable pages")
 
