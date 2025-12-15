@@ -99,12 +99,6 @@ jobs:
           --all-containers=true \
           --prefix=true || echo "Could not fetch logs"
 
-    - name: Rollback on failure
-      if: failure()
-      run: |
-        echo "Rolling back deployment"
-        kubectl rollout undo deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
-
     - name: Deployment Summary
       if: always()
       run: |
