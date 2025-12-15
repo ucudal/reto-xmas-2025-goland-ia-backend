@@ -1,4 +1,4 @@
-#MinIO client configuration and utilities.
+# MinIO client configuration and utilities.
 
 import logging
 
