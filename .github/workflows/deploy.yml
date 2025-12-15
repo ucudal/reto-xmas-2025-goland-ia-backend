@@ -9,7 +9,7 @@ on:
 env:
   REGISTRY: crretoxmas2024.azurecr.io
   NAMESPACE: reto-xmas-2025-goland-ia-backend
-  DEPLOY_TIMEOUT: 3m
+  DEPLOY_TIMEOUT: 8m
 
 jobs:
   build-and-deploy:
@@ -72,10 +72,12 @@ jobs:
           api=${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }} \
           -n ${{ env.NAMESPACE }}
 
-    - name: Wait for new pods to be Ready
+    - name: Wait for deployment rollout
       run: |
-        echo "Waiting for new pods to be Ready..."
-        kubectl wait --for=condition=Ready pod -l app=${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} --timeout=${{ env.DEPLOY_TIMEOUT }}
+        echo "Waiting for deployment rollout to complete..."
+        kubectl rollout status deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} --timeout=${{ env.DEPLOY_TIMEOUT }}
+        kubectl wait --for=condition=available deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} --timeout=${{ env.DEPLOY_TIMEOUT }}
+        kubectl get deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
         kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }}
 
     - name: Verify deployment
