@@ -25,16 +25,18 @@ def create_agent_graph() -> StateGraph:
     Create and configure the LangGraph agent graph.
 
     The graph implements the following flow:
-    1. START -> agent_host (Nodo 1)
-    2. agent_host -> guard_inicial (Nodo 2)
-    3. guard_inicial -> [conditional] -> fallback_inicial (if malicious) or parafraseo (if continue)
-    4. fallback_inicial -> END (error: breaks rules)
-    5. parafraseo -> retriever (Nodo 4)
-    6. retriever -> context_builder (Nodo 5)
-    7. context_builder -> generator (Nodo 6)
-    8. generator -> guard_final (Nodo 7)
-    9. guard_final -> [conditional] -> fallback_final (if risky) or END (if continue)
-    10. fallback_final -> END (error: classified info)
+    1. START -> agent_host (Nodo 1) - Prepares state, no DB operations
+    2. agent_host -> guard (Nodo 2) - Validates for malicious content
+    3. guard -> [conditional]:
+       - malicious -> fallback -> END (stops processing, no DB save)
+       - continue -> parafraseo (Nodo 4)
+    4. parafraseo -> Saves message to DB, retrieves chat history, paraphrases
+    5. parafraseo -> retriever (Nodo 5)
+    6. retriever -> context_builder (Nodo 6)
+    7. context_builder -> guard (validates response)
+    8. guard -> [conditional]:
+       - malicious -> fallback -> END
+       - continue -> END (success)
 
     Returns:
         Configured StateGraph instance ready for execution
