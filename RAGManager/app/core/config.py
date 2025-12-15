@@ -47,6 +47,19 @@ class Settings(BaseSettings):
         default="cpu",
         description="Device for model inference.",
     )
+    guardrails_pii_entities: list[str] = Field(
+        default=[
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "CREDIT_CARD",
+            "SSN",
+            "US_PASSPORT",
+            "US_DRIVER_LICENSE",
+            "IBAN_CODE",
+            "IP_ADDRESS",
+        ],
+        description="List of PII entity types to detect using DetectPII validator.",
+    )
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
