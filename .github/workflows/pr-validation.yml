@@ -97,3 +97,15 @@ jobs:
             repo: context.repo.repo,
             body: message
           });
+
+  discord-pr-notify:
+    name: Notificar PR en Discord
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Notificar a Discord (nuevo PR)
+        run: |
+          curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"content\": \"🔔 Nuevo Pull Request: [${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }}) por ${{ github.event.pull_request.user.login }}\"}" \
+            https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk

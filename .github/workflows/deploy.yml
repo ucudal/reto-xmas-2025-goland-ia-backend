@@ -156,6 +156,13 @@ jobs:
         echo "- [DocsManager](https://goland-ia-backend-docs-manager.reto-ucu.net/docs)" >> $GITHUB_STEP_SUMMARY
         echo "- [RAGManager](https://goland-ia-backend-rag-manager.reto-ucu.net/docs)" >> $GITHUB_STEP_SUMMARY
 
+    - name: Notificar a Discord (deploy exitoso)
+      run: |
+        curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{\"content\": \"Deploy exitoso en *${{ env.NAMESPACE }}* :rocket:\"}" \
+          https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk
+
   notify-failure:
     name: Deployment Failed
     runs-on: ubuntu-latest
@@ -167,3 +174,10 @@ jobs:
         echo "### Deployment Failed" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "Please check deployment logs above." >> $GITHUB_STEP_SUMMARY
+
+    - name: Notificar a Discord (deploy fallido)
+      run: |
+        curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{\"content\": \"Falló el deploy en *${{ env.NAMESPACE }}*. Revisa los logs en GitHub Actions.\"}" \
+          https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk
