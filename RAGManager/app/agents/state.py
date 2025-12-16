@@ -30,6 +30,7 @@ class AgentState(MessagesState):
 
     # Nodo 4: Parafraseo
     paraphrased_text: str | None  # Paraphrased text from Parafraseo node
+    paraphrased_phrases: list[str] | None  # List of 3 paraphrased phrases for retrieval MIGHT CAUSE CONFLICT
 
     # Nodo 5: Retriever
     relevant_chunks: list[str] | None  # Chunks retrieved from vector DB

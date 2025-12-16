@@ -9,6 +9,7 @@ dependencies = [
     "ipython>=9.8.0",
     "langgraph>=1.0.4",
     "langchain-core>=0.3.0",
+    "langchain-postgres>=0.0.5",
     "typing-extensions>=4.15.0",
     "uvicorn>=0.38.0",
     "sqlalchemy>=2.0.0",
