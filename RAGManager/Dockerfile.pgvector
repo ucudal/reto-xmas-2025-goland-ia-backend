@@ -1,5 +1,0 @@
-FROM pgvector/pgvector:pg16
-
-# Copiar el script de inicialización durante la construcción de la imagen
-COPY init.sql /docker-entrypoint-initdb.d/init.sql
-

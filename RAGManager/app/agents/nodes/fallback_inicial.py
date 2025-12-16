@@ -1,4 +1,4 @@
-"""Nodo 3: Fallback Inicial - Initial fallback processing."""
+"""Nodo 3: Fallback Inicial - Stops processing when malicious content is detected."""
 
 import logging
 
@@ -9,40 +9,22 @@ logger = logging.getLogger(__name__)
 
 def fallback_inicial(state: AgentState) -> AgentState:
     """
-    Fallback Inicial node - Performs initial fallback processing.
+    Fallback Inicial node - Stops processing when malicious content is detected.
 
     This node:
-    1. Defensively checks if the prompt was flagged as malicious
-    2. Adjusts the text if needed (e.g., formatting, normalization)
-    3. Prepares text for paraphrasing step
+    1. Sets error message indicating that the user's intentions break the chatbot's rules
+    2. Stops the flow by routing to END
 
     Args:
-        state: Agent state containing the prompt or initial context
+        state: Agent state containing the prompt flagged as malicious
 
     Returns:
-        Updated state with adjusted_text set (if applicable) or error_message if malicious
+        Updated state with error_message set, ready to route to END
     """
     updated_state = state.copy()
 
-    # Defensive check: Verify that the prompt was not flagged as malicious
-    # This should not happen due to routing, but serves as an extra safety layer
-    if state.get("is_malicious", False):
-        logger.warning(
-            "Defensive check triggered: Malicious prompt reached fallback_inicial node. "
-            "This indicates a potential routing issue."
-        )
-        updated_state["error_message"] = "The requested information or action is not possible by the agent."
-        updated_state["adjusted_text"] = None
-        return updated_state
-
-    # TODO: Implement initial fallback logic
-    # This should:
-    # 1. Normalize text (remove extra spaces, fix encoding, etc.)
-    # 2. Apply any necessary text adjustments
-    # 3. Set adjusted_text if adjustments were made, otherwise None
-
-    # Placeholder: For now, we'll use the prompt as-is
-    prompt = state.get("prompt", "")
-    updated_state["adjusted_text"] = prompt if prompt else None
+    # Set error message for malicious content
+    updated_state["error_message"] = "The user's intentions break the chatbot's rules."
+    logger.warning("Malicious content detected. Stopping processing. Prompt content not logged for security.")
 
     return updated_state

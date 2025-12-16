@@ -1,4 +1,4 @@
-"""Nodo 2: Guard - Validates for malicious content."""
+"""Nodo 2: Guard Inicial - Validates for malicious content (jailbreak detection)."""
 
 import logging
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize Guard with DetectJailbreak validator
 # Note: The validator must be installed via: guardrails hub install hub://guardrails/detect_jailbreak
-_guard = Guard().use(
+_guard_inicial = Guard().use(
     DetectJailbreak(
         threshold=settings.guardrails_jailbreak_threshold,
         device=settings.guardrails_device,
@@ -21,9 +21,9 @@ _guard = Guard().use(
 )
 
 
-def guard(state: AgentState) -> AgentState:
+def guard_inicial(state: AgentState) -> AgentState:
     """
-    Guard node - Validates user input for malicious content using Guardrails DetectJailbreak.
+    Guard inicial node - Validates user input for jailbreak attempts using Guardrails DetectJailbreak.
 
     This node:
     1. Validates the prompt using Guardrails DetectJailbreak validator
@@ -37,7 +37,9 @@ def guard(state: AgentState) -> AgentState:
         Updated state with is_malicious and error_message set
     """
     updated_state = state.copy()
-    prompt = state.get("prompt", "")
+    messages = state.get("messages", [])
+    last_message = messages[-1] if messages else None
+    prompt = last_message.content if last_message else ""
 
     if not prompt:
         # Empty prompt is considered safe
@@ -47,7 +49,7 @@ def guard(state: AgentState) -> AgentState:
 
     try:
         # Validate the prompt using Guardrails
-        validation_result = _guard.validate(prompt)
+        validation_result = _guard_inicial.validate(prompt)
 
         # Check if validation passed
         # The validator returns ValidationResult with outcome
@@ -62,7 +64,7 @@ def guard(state: AgentState) -> AgentState:
             updated_state["error_message"] = (
                 "Jailbreak attempt detected. Your request contains content that violates security policies."
             )
-            logger.warning(f"Jailbreak attempt detected in prompt: {prompt[:100]}...")
+            logger.warning("Jailbreak attempt detected. Prompt content not logged for security.")
 
     except Exception as e:
         # If validation fails due to error, log it but don't block the request

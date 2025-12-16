@@ -6,7 +6,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from DocsManager.app.core.db_connection import Base
+from app.core.db_connection import Base
 
 
 class ChatSession(Base):
