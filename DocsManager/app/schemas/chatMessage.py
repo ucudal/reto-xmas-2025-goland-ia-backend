@@ -8,4 +8,5 @@ class UserMessageIn(BaseModel):
 
 
 class AssistantMessageOut(BaseModel):
+    session_id: UUID
     message: str
