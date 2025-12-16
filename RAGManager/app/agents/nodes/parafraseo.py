@@ -86,16 +86,46 @@ def parafraseo(state: AgentState) -> AgentState:
         intention_message = chat_messages[0] if chat_messages else {"sender": "user", "message": user_message_content}
     
     # Format chat history for LLM prompt
+    # Each message should clearly indicate if it was sent by the user or the agent
+    def format_message_with_sender(msg: dict) -> str:
+        """Format a message with explicit sender label."""
+        sender = msg.get("sender", "unknown").lower()
+        message = msg.get("message", "")
+        
+        # Normalize sender labels for clarity
+        if sender == "user":
+            sender_label = "User"
+        elif sender == "assistant":
+            sender_label = "Assistant"
+        elif sender == "system":
+            sender_label = "System"
+        else:
+            sender_label = sender.capitalize()
+        
+        return f"{sender_label}: {message}"
+    
     context_text = ""
     if context_messages:
         context_lines = []
         for msg in context_messages:
-            sender = msg.get("sender", "unknown")
-            message = msg.get("message", "")
-            context_lines.append(f"{sender.capitalize()}: {message}")
+            context_lines.append(format_message_with_sender(msg))
         context_text = "\n".join(context_lines)
     
-    intention_text = intention_message.get("message", user_message_content)
+    # Format the intention message with sender information
+    intention_sender = intention_message.get("sender", "user").lower()
+    intention_message_text = intention_message.get("message", user_message_content)
+    
+    # Format intention message with sender label
+    if intention_sender == "user":
+        intention_label = "User"
+    elif intention_sender == "assistant":
+        intention_label = "Assistant"
+    elif intention_sender == "system":
+        intention_label = "System"
+    else:
+        intention_label = intention_sender.capitalize()
+    
+    intention_text = f"{intention_label}: {intention_message_text}"
     
     # Create LLM prompt with instructions
     system_instruction = """You are an expert at understanding user intentions and paraphrasing them in different ways.
@@ -117,16 +147,17 @@ Example format:
 ["What are the main features of the product?", "Can you explain the key characteristics of this product?", "I'd like to know what this product offers."]"""
 
     # Build the prompt with context and intention
+    # Both context and intention messages now clearly show sender (User/Assistant/System)
     if context_text:
         user_prompt = f"""Conversation History (older messages for context):
 {context_text}
 
-Last User Message (current intention):
+Last Message (current intention):
 {intention_text}
 
 Return 3 differently phrased statements that encapsulate the user's intention from their last message, using the conversation history for context."""
     else:
-        user_prompt = f"""User Message (current intention):
+        user_prompt = f"""Message (current intention):
 {intention_text}
 
 Return 3 differently phrased statements that encapsulate the user's intention from their message."""
