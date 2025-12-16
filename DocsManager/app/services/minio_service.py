@@ -66,7 +66,9 @@ class MinIOService:
         try:
             # Generate a unique name for the file
             file_extension = filename.split(".")[-1] if "." in filename else "pdf"
-            object_name = f"{uuid.uuid4()}.{file_extension}"
+            # Use MINIO_FOLDER to organize files in a specific folder
+            folder = settings.minio_folder.rstrip("/")  # Remove trailing slash if present
+            object_name = f"{folder}/{uuid.uuid4()}.{file_extension}"
 
             file_stream = BytesIO(file_data)
             file_size = len(file_data)

@@ -12,8 +12,6 @@ from app.schemas.document import (
 from app.core.db_connection import get_db
 from app.models.document import Document as DocumentModel
 from app.services.minio_service import minio_service
-from app.core.rabbitmq import rabbitmq
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +29,12 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
     Flow:
     1. Validate file
-    2. Save to MinIO
+    2. Save to MinIO (in the folder specified by MINIO_FOLDER)
     3. Save metadata to PostgreSQL
-    4. Publish message to RabbitMQ
-    5. Return immediate response
+    4. Return immediate response
+    
+    Note: MinIO events will automatically publish a message to RabbitMQ
+    when a file is created in the configured folder.
     """
     try:
         # 1. Validate file
@@ -105,21 +105,9 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
                 detail=f"Failed to save document metadata: {str(e)}"
             )
 
-        # 4. Publish message to RabbitMQ (only after successful DB commit)
-        message = {
-            "document_id": document_id,
-            "minio_path": minio_path,
-            "filename": file.filename,
-        }
-
-        try:
-            rabbitmq.publish_message(settings.queue_name, message)
-        except Exception as e:
-            logger.error(f"Failed to publish message to RabbitMQ: {e}")
-            # Don't fail the request, but log the error
-            # The document is already saved, it can be processed manually
-
-        # 5. Return response
+        # 4. Return response
+        # Note: MinIO events will automatically publish a message to RabbitMQ
+        # when the file is created in the configured folder
         return DocumentUploadResponse(
             id=document_id,
             filename=file.filename,
