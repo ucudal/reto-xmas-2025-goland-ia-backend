@@ -25,9 +25,13 @@ async def startup_event():
         init_db()
         logging.info("Database initialized successfully")
 
-        # Initialize RabbitMQ connection (will be used when publishing messages)
+        # Initialize RabbitMQ connection, exchange and queue
         from app.core.rabbitmq import rabbitmq
-        logging.info("RabbitMQ module loaded")
+        from app.core.config import settings
+        rabbitmq.connect()
+        rabbitmq.declare_exchange(settings.rabbitmq_exchange_name)
+        rabbitmq.declare_queue(settings.rabbitmq_queue_name, settings.rabbitmq_exchange_name)
+        logging.info(f"RabbitMQ initialized: exchange='{settings.rabbitmq_exchange_name}', queue='{settings.rabbitmq_queue_name}'")
     except Exception as e:
         logging.error(f"Failed to initialize services: {e}")
         raise
