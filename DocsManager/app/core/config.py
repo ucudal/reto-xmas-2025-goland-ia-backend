@@ -43,6 +43,12 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        env_prefix="",
+        env_map={
+            "postgres_user": "DB_USER",
+            "postgres_password": "DB_PASSWORD",
+            "postgres_db": "DB_NAME",
+        }
     )
 
     @field_validator('rabbitmq_host', mode='after')
