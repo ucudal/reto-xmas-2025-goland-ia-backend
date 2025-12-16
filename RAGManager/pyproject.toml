@@ -3,20 +3,23 @@ name = "goland-ia"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.124.2",
     "ipython>=9.8.0",
     "langgraph>=1.0.4",
+    "langchain>=0.3.0",
     "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",  # For ChatOpenAI
+    "langchain-text-splitters>=0.3.0",  # For RecursiveCharacterTextSplitter
     "typing-extensions>=4.15.0",
     "uvicorn>=0.38.0",
     "sqlalchemy>=2.0.0",
     "psycopg2-binary>=2.9.0",
     "pgvector>=0.3.0",
     "pydantic-settings>=2.0.0",
-    "typing-extensions>=4.15.0",
-    "uvicorn>=0.38.0",
+    "minio>=7.2.0",  # For MinIO client
+    "pdfplumber>=0.11.0",  # For PDF processing
     "guardrails-ai>=0.6.2",
     "presidio-analyzer>=2.2.360",
     "presidio-anonymizer>=2.2.360",
@@ -29,7 +32,7 @@ dev = [
 
 [tool.ruff]
 # Enable pyproject.toml support
-target-version = "py314"
+target-version = "py312"
 line-length = 120
 
 # Enable auto-fix

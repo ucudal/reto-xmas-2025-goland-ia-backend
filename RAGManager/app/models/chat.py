@@ -17,7 +17,7 @@ class ChatSession(Base):
     id = Column(PGUUID(as_uuid=True), primary_key=True, server_default="uuid_generate_v4()")
     user_id = Column(Text, nullable=True, index=True)  # User ID for ownership validation
     created_at = Column(TIMESTAMP, default=datetime.utcnow, nullable=False)
-    metadata = Column(JSONB, nullable=True)
+    meta = Column("metadata", JSONB, nullable=True)  # Fixed: renamed from 'metadata' to 'meta' (metadata is reserved in SQLAlchemy)
 
     # Relationship to messages
     messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
