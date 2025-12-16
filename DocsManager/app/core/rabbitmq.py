@@ -46,12 +46,32 @@ class RabbitMQConnection:
             self.connection.close()
             logger.info("RabbitMQ connection closed")
 
-    def declare_queue(self, queue_name: str, durable: bool = True):
-        """Declares a queue"""
+    def declare_exchange(self, exchange_name: str, exchange_type: str = "direct", durable: bool = True):
+        """Declares an exchange"""
+        if not self.channel:
+            self.connect()
+        self.channel.exchange_declare(
+            exchange=exchange_name,
+            exchange_type=exchange_type,
+            durable=durable
+        )
+        logger.info(f"Exchange '{exchange_name}' declared")
+
+    def declare_queue(self, queue_name: str, exchange_name: str = None, durable: bool = True):
+        """Declares a queue and optionally binds it to an exchange"""
         if not self.channel:
             self.connect()
         self.channel.queue_declare(queue=queue_name, durable=durable)
         logger.info(f"Queue '{queue_name}' declared")
+        
+        # Bind to exchange if provided
+        if exchange_name:
+            self.channel.queue_bind(
+                queue=queue_name,
+                exchange=exchange_name,
+                routing_key=queue_name
+            )
+            logger.info(f"Queue '{queue_name}' bound to exchange '{exchange_name}'")
 
     def publish_message(self, queue_name: str, message: dict):
         """Publishes a message to the queue"""

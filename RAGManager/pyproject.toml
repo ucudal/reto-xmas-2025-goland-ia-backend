@@ -3,7 +3,7 @@ name = "rag-manager"
 version = "0.1.0"
 description = "RAG Manager for document processing"
 readme = "README.md"
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.12,<3.13"
 dependencies = [
    "fastapi>=0.124.2",
     "ipython>=9.8.0",
@@ -18,7 +18,12 @@ dependencies = [
     "pgvector>=0.3.0",
     "pydantic-settings>=2.0.0",
     "uvicorn>=0.38.0",
-    "guardrails-ai>=0.6.2",
+    "guardrails-ai>=0.5.10",
+    "langchain>=1.2.0",
+    "langchain-community>=0.4.1",
+    "langchain-text-splitters>=1.1.0",
+    "pdfplumber>=0.11.8",
+    "minio>=7.2.20",
     "presidio-analyzer>=2.2.360",
     "presidio-anonymizer>=2.2.360",
 ]
@@ -65,4 +70,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
+
+# Automatically detect line ending
 line-ending = "auto"
