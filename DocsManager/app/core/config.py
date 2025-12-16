@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator, model_validator
+from pydantic import field_validator, model_validator, Field
 from typing import Optional
 from urllib.parse import quote_plus
 import logging
@@ -11,31 +11,31 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # PostgreSQL Configuration
-    postgres_user: str
-    postgres_password: str
-    postgres_db: str
-    postgres_host: str = "localhost"
-    postgres_port: int = 5432
+    postgres_user: str = Field(..., env="DB_USER")
+    postgres_password: str = Field(..., env="DB_PASSWORD")
+    postgres_db: str = Field(..., env="DB_NAME")
+    postgres_host: str = Field("localhost", env="DB_HOST")
+    postgres_port: int = Field(5432, env="DB_PORT")
 
     # RabbitMQ Configuration
-    rabbitmq_user: str
-    rabbitmq_password: str
-    rabbitmq_host: str = "localhost"
-    rabbitmq_port: int = 5672
-    rabbitmq_management_port: int = 15672
+    rabbitmq_user: str = Field(..., env="RABBITMQ_USER")
+    rabbitmq_password: str = Field(..., env="RABBITMQ_PASSWORD")
+    rabbitmq_host: str = Field("localhost", env="RABBITMQ_HOST")
+    rabbitmq_port: int = Field(5672, env="RABBITMQ_PORT")
+    rabbitmq_management_port: int = Field(15672, env="RABBITMQ_MANAGEMENT_PORT")
 
     # MinIO Configuration
-    minio_endpoint: str
-    minio_access_key: str
-    minio_secret_key: str
-    minio_bucket: str = "documents"
-    minio_use_ssl: bool = True
+    minio_endpoint: str = Field(..., env="MINIO_ENDPOINT")
+    minio_access_key: str = Field(..., env="MINIO_ACCESS_KEY")
+    minio_secret_key: str = Field(..., env="MINIO_SECRET_KEY")
+    minio_bucket: str = Field("documents", env="MINIO_BUCKET")
+    minio_use_ssl: bool = Field(True, env="MINIO_SECURE")
 
     # Database Configuration (for SQLAlchemy)
-    database_url: str = ""
+    database_url: str = Field("", env="DATABASE_URL")
 
     # Application
-    queue_name: str = "document.process"
+    queue_name: str = "queue"
 
     model_config = SettingsConfigDict(
         env_file=".env",
