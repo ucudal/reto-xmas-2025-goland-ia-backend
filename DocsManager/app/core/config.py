@@ -55,13 +55,6 @@ class Settings(BaseSettings):
             logger.warning("RABBITMQ_HOST is empty, using 'localhost' as default")
             return "localhost"
         
-        # Replace Docker service name with localhost
-        if v.strip() == "rabbitmq":
-            logger.warning(
-                "RABBITMQ_HOST='rabbitmq' detected. Changing to 'localhost' because app runs outside Docker"
-            )
-            return "localhost"
-        
         return v
 
     @model_validator(mode='after')
