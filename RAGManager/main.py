@@ -1,8 +1,8 @@
 import logging
 from fastapi import FastAPI
-from sqlalchemy.exc import OperationalError
 
-from app.api.routes import documents
+from app.api.routes import router as api_router
+from app.api.routes.base import router as base_router
 from app.core.database_connection import init_db
 
 # Configure logging
@@ -13,9 +13,11 @@ logging.basicConfig(
 
 app = FastAPI(title="RAG Manager API", version="0.1.0")
 
-# Include routers
-app.include_router(documents.router)
+# Global (non-versioned) routes
+app.include_router(base_router)
 
+# Versioned API routes
+app.include_router(api_router)
 
 @app.on_event("startup")
 async def startup_event():
@@ -26,15 +28,3 @@ async def startup_event():
     except Exception as e:
         logging.error(f"Failed to initialize database: {e}")
         raise
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/health")
-def health_check():
-    return {"message": "200 corriendo..."}
-
-

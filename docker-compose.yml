@@ -98,6 +98,14 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      # Configuración de notificación AMQP
+      MINIO_NOTIFY_AMQP_ENABLE_1: "on"
+      MINIO_NOTIFY_AMQP_URL_1: "amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672"
+      MINIO_NOTIFY_AMQP_EXCHANGE_1: "${RABBITMQ_EXCHANGE_NAME:-minio-events}"
+      MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_1: "direct"
+      MINIO_NOTIFY_AMQP_ROUTING_KEY_1: "${RABBITMQ_QUEUE_NAME:-document.process}"
+      MINIO_NOTIFY_AMQP_DURABLE_1: "on"
+      MINIO_NOTIFY_AMQP_DELIVERY_MODE_1: "2"
     ports:
       - "9000:9000"   # Puerto API
       - "9001:9001"   # Puerto Web Console
@@ -108,6 +116,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
+
+  # MinIO Setup - Configuración automática de eventos
+  minio-setup:
+    image: minio/mc:latest
+    container_name: minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_BUCKET=${MINIO_BUCKET:-goland-bucket}
+      - MINIO_FOLDER=${MINIO_FOLDER:-rag-docs}
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_QUEUE_NAME=${RABBITMQ_QUEUE_NAME:-document.process}
+      - RABBITMQ_EXCHANGE_NAME=${RABBITMQ_EXCHANGE_NAME:-minio-events}
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      echo '🔧 Configurando eventos MinIO...' &&
+      mc alias set myminio $$MINIO_ENDPOINT $$MINIO_ACCESS_KEY $$MINIO_SECRET_KEY &&
+      mc mb myminio/$$MINIO_BUCKET --ignore-existing &&
+      echo '📦 Bucket: $$MINIO_BUCKET ✓' &&
+      mc event add myminio/$$MINIO_BUCKET arn:minio:sqs::1:amqp --event put --prefix $$MINIO_FOLDER/ &&
+      echo '✅ Eventos configurados para: $$MINIO_FOLDER/' &&
+      mc event list myminio/$$MINIO_BUCKET
+      "
+    restart: "no"
     networks:
       - app-network
 
