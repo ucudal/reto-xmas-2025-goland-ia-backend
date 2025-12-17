@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     rabbitmq_password: str
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = 5672
-    rabbitmq_queue_name: str = "minio-events"
+    rabbitmq_queue_name: str = "document.process"
 
     # Chunking Configuration
     chunk_size: int = 1000
