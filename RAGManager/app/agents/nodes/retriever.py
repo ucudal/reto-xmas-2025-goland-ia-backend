@@ -1,18 +1,80 @@
 """Nodo 5: Retriever - Performs semantic search in vector database."""
 
 import logging
+from typing import List
+from urllib.parse import urlparse, urlunparse
 
+from langchain_openai import OpenAIEmbeddings
 from langchain_postgres import PGVector
 
 from app.agents.state import AgentState
-from app.services.vector_store import _get_vector_store
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Initialize OpenAI embeddings
+embeddings = OpenAIEmbeddings(
+    model=settings.embedding_model,
+    openai_api_key=settings.openai_api_key,
+)
+
+
+def _convert_database_url_to_psycopg(database_url: str) -> str:
+    """
+    Convert database URL to postgresql+psycopg format required by langchain-postgres.
+
+    LangChain PGVector requires postgresql+psycopg:// (psycopg3) format.
+    This function converts common formats (postgresql://, postgresql+psycopg2://) to the required format.
+
+    Args:
+        database_url: Original database URL
+
+    Returns:
+        Database URL in postgresql+psycopg:// format
+    """
+    parsed = urlparse(database_url)
+
+    # Replace driver with psycopg (psycopg3)
+    if parsed.scheme.startswith("postgresql"):
+        # Remove any existing driver (e.g., +psycopg2)
+        base_scheme = "postgresql"
+        if "+" in parsed.scheme:
+            base_scheme = parsed.scheme.split("+")[0]
+
+        new_scheme = f"{base_scheme}+psycopg"
+        new_parsed = parsed._replace(scheme=new_scheme)
+        return urlunparse(new_parsed)
+
+    return database_url
+
+
+def _get_vector_store() -> PGVector:
+    """
+    Get or create PGVector instance for document retrieval.
+
+    Returns:
+        PGVector instance configured with embeddings and connection
+    """
+    # Convert database URL to psycopg format required by langchain-postgres
+    connection_string = _convert_database_url_to_psycopg(settings.database_url)
+
+    # Collection name for the vector store
+    # PGVector will use this to organize documents in its own schema
+    collection_name = "document_chunks"
+
+    vector_store = PGVector(
+        embeddings=embeddings,
+        collection_name=collection_name,
+        connection=connection_string,
+        use_jsonb=True,
+    )
+
+    return vector_store
 
 
 def _retrieve_chunks_for_phrase(
     vector_store: PGVector, phrase: str, top_k: int = 3
-) -> list[tuple[str, str]]:
+) -> List[tuple[str, str]]:
     """
     Retrieve top-k most similar chunks for a given phrase using PGVector.
 
@@ -75,7 +137,7 @@ def retriever(state: AgentState) -> AgentState:
 
     # Use a set to track unique chunk IDs to avoid duplicates
     seen_chunk_ids: set[str] = set()
-    unique_chunks: list[str] = []
+    unique_chunks: List[str] = []
 
     try:
         # Get PGVector instance
