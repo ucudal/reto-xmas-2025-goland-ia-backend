@@ -3,7 +3,7 @@ import logging
 from langchain_core.documents import Document
 
 from app.core.config import settings
-from app.services.chunking_service import document_to_chunks
+from app.services.chunking_service import split_documents as document_to_chunks
 from app.services.embedding_service import chunks_to_embeddings
 from app.services.pdf_processor import pdf_to_document
 

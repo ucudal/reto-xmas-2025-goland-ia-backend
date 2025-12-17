@@ -1,6 +1,53 @@
-version: '3.8'
-
 services:
+  docs-manager:
+    build:
+      context: ./DocsManager
+      dockerfile: Dockerfile
+    container_name: docs-manager
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+      - ./DocsManager/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=docs-manager
+      - SERVICE_ROLE=document-handler
+    networks:
+      - app-network
+
+  rag-manager:
+    build:
+      context: ./RAGManager
+      dockerfile: Dockerfile
+    container_name: rag-manager
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+      - ./RAGManager/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICE_NAME=rag-manager
+      - SERVICE_ROLE=document-processor
+    networks:
+      - app-network
   # PostgreSQL con pgvector
   postgres:
     build:
