@@ -7,7 +7,6 @@ from app.agents.nodes import (
     context_builder,
     fallback_final,
     fallback_inicial,
-    generator,
     guard_final,
     guard_inicial,
     parafraseo,
@@ -18,7 +17,6 @@ from app.agents.routing import (
     route_after_guard_inicial,
 )
 from app.agents.state import AgentState
-from app.agents.routing import route_after_guard
 
 def create_agent_graph() -> StateGraph:
     """
@@ -26,17 +24,17 @@ def create_agent_graph() -> StateGraph:
 
     The graph implements the following flow:
     1. START -> agent_host (Nodo 1) - Prepares state, no DB operations
-    2. agent_host -> guard (Nodo 2) - Validates for malicious content
-    3. guard -> [conditional]:
-       - malicious -> fallback -> END (stops processing, no DB save)
+    2. agent_host -> guard_inicial (Nodo 2) - Validates for malicious content
+    3. guard_inicial -> [conditional]:
+       - malicious -> fallback_inicial -> END (stops processing, no DB save)
        - continue -> parafraseo (Nodo 4)
     4. parafraseo -> Saves message to DB, retrieves chat history, paraphrases
-    5. parafraseo -> retriever (Nodo 5)
-    6. retriever -> context_builder (Nodo 6)
-    7. context_builder -> guard (validates response)
-    8. guard -> [conditional]:
-       - malicious -> fallback -> END
-       - continue -> END (success)
+    5. parafraseo -> retriever (Nodo 5) - Retrieves relevant chunks from vector DB
+    6. retriever -> context_builder (Nodo 6) - Builds enriched query and generates response
+    7. context_builder -> guard_final (Nodo 8) - Validates response for risky content
+    8. guard_final -> [conditional]:
+       - risky -> fallback_final -> END
+       - continue -> END (success, returns generated message)
 
     Returns:
         Configured StateGraph instance ready for execution
@@ -51,7 +49,6 @@ def create_agent_graph() -> StateGraph:
     workflow.add_node("parafraseo", parafraseo)
     workflow.add_node("retriever", retriever)
     workflow.add_node("context_builder", context_builder)
-    workflow.add_node("generator", generator)
     workflow.add_node("guard_final", guard_final)
     workflow.add_node("fallback_final", fallback_final)
 
@@ -81,11 +78,8 @@ def create_agent_graph() -> StateGraph:
     # retriever -> context_builder
     workflow.add_edge("retriever", "context_builder")
 
-    # context_builder -> guard
-    workflow.add_edge("context_builder", "guard")
-
-    # generator -> guard_final
-    workflow.add_edge("generator", "guard_final")
+    # context_builder -> guard_final
+    workflow.add_edge("context_builder", "guard_final")
 
     # guard_final -> conditional routing
     workflow.add_conditional_edges(
