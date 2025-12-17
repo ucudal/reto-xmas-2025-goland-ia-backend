@@ -11,9 +11,9 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 
-from schemas.enums.sender_type import SenderType
+from app.schemas.enums.sender_type import SenderType
 
-from DocsManager.app.core.db_connection import Base
+from app.core.db_connection import Base
 
 
 class ChatMessage(Base):

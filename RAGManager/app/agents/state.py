@@ -29,7 +29,8 @@ class AgentState(MessagesState):
     adjusted_text: str | None  # Text adjusted by initial fallback (if applicable)
 
     # Nodo 4: Parafraseo
-    paraphrased_text: str | None  # Paraphrased text from Parafraseo node
+    paraphrased_text: str | None  # Paraphrased text from Parafraseo node (first statement for backward compatibility)
+    paraphrased_statements: list[str] | None  # List of 3 differently phrased statements from Parafraseo node
 
     # Nodo 5: Retriever
     relevant_chunks: list[str] | None  # Chunks retrieved from vector DB
