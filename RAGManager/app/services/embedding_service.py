@@ -1,3 +1,12 @@
+"""
+DEPRECATED: This module is no longer used.
+
+Embedding generation is now handled by the vector_store module using LangChain PGVector,
+which generates embeddings internally when storing documents.
+
+See: app/services/vector_store.py
+"""
+
 from typing import List, Tuple
 
 from langchain_core.documents import Document
@@ -5,11 +14,11 @@ from langchain_core.documents import Document
 
 def chunks_to_embeddings(chunks: List[Document]) -> List[Tuple[str, List[float]]]:
     """
-    Placeholder function - to be implemented later.
+    DEPRECATED: Use vector_store.store_chunks_with_embeddings() instead.
 
-    This function will:
-    1. Generate embeddings for each chunk using OpenAI's embedding API
-    2. Return a list of tuples containing chunk content and its embedding vector
+    This function is no longer used. Embedding generation is now handled
+    by LangChain PGVector's add_documents() method, which generates
+    embeddings internally using OpenAI.
 
     Args:
         chunks: List of LangChain Document chunks to embed
@@ -19,7 +28,9 @@ def chunks_to_embeddings(chunks: List[Document]) -> List[Tuple[str, List[float]]
         where embedding_vector is a list of floats with dimension 1536
 
     Raises:
-        NotImplementedError: This function is not yet implemented
+        DeprecationWarning: This function should not be used
     """
-    raise NotImplementedError("This function will be implemented later")
+    raise DeprecationWarning(
+        "This function is deprecated. Use vector_store.store_chunks_with_embeddings() instead."
+    )
 
