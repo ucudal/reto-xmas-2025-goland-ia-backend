@@ -29,13 +29,15 @@ class Settings(BaseSettings):
     minio_access_key: str
     minio_secret_key: str
     minio_bucket: str = "documents"
+    minio_folder: str = "rag-docs"
     minio_use_ssl: bool = True
 
     # Database Configuration (for SQLAlchemy)
     database_url: str = ""
 
-    # Application
-    queue_name: str = "document.process"
+    # RabbitMQ Queue/Exchange
+    rabbitmq_queue_name: str = "document.process"
+    rabbitmq_exchange_name: str = "minio-events"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -51,13 +53,6 @@ class Settings(BaseSettings):
         # Handle empty or whitespace-only values
         if not v or v.strip() == "":
             logger.warning("RABBITMQ_HOST is empty, using 'localhost' as default")
-            return "localhost"
-        
-        # Replace Docker service name with localhost
-        if v.strip() == "rabbitmq":
-            logger.warning(
-                "RABBITMQ_HOST='rabbitmq' detected. Changing to 'localhost' because app runs outside Docker"
-            )
             return "localhost"
         
         return v
