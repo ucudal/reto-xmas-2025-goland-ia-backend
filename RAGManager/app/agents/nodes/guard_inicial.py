@@ -62,7 +62,7 @@ def guard_inicial(state: AgentState) -> AgentState:
             # Jailbreak detected
             updated_state["is_malicious"] = True
             updated_state["error_message"] = (
-                "Jailbreak attempt detected. Your request contains content that violates security policies."
+                "Se detectó un intento de jailbreak. Tu solicitud contiene contenido que viola las políticas de seguridad."
             )
             logger.warning("Jailbreak attempt detected. Prompt content not logged for security.")
 

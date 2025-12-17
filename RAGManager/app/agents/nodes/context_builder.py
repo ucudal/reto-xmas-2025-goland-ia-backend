@@ -38,10 +38,10 @@ def context_builder(state: AgentState) -> AgentState:
     # Build enriched query with context
     context_section = "\n\n".join(chunks) if chunks else "No relevant context found."
     
-    system_content = f"""You are a helpful assistant. Use the following context to answer the user's question.
-If the answer is not in the context, say you don't know.
+    system_content = f"""Eres un asistente útil. Usa el siguiente contexto para responder la pregunta del usuario.
+Si la respuesta no está en el contexto, di que no lo sabes.
 
-Context:
+Contexto:
 {context_section}"""
 
     messages = [SystemMessage(content=system_content)] + state["messages"]

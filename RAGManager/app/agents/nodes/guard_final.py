@@ -59,7 +59,7 @@ def guard_final(state: AgentState) -> AgentState:
             # PII detected
             updated_state["is_risky"] = True
             updated_state["error_message"] = (
-                "PII detected in generated response. The information requested is classified or not free to know."
+                "Se detectó información personal (PII) en la respuesta generada. La información solicitada es confidencial o no es de libre acceso."
             )
             logger.warning("PII detected in generated response. Response content not logged for security.")
 

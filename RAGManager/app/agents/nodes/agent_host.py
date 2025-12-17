@@ -36,7 +36,7 @@ def agent_host(state: AgentState) -> AgentState:
     user_id = state.get("user_id")
     if not user_id:
         logger.error("user_id is required in state but was not provided")
-        updated_state["error_message"] = "user_id is required"
+        updated_state["error_message"] = "Se requiere user_id"
         return updated_state
 
     # Set prompt and initial context (no DB operations)
