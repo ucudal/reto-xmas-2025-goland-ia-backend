@@ -9,14 +9,13 @@ dependencies = [
     "ipython>=9.8.0",
     "langgraph>=1.0.4",
     "langchain-core>=0.3.0",
+    "langchain-text-splitters>=0.3.0",
     "typing-extensions>=4.15.0",
     "uvicorn>=0.38.0",
     "sqlalchemy>=2.0.0",
     "psycopg2-binary>=2.9.0",
     "pgvector>=0.3.0",
     "pydantic-settings>=2.0.0",
-    "typing-extensions>=4.15.0",
-    "uvicorn>=0.38.0",
     "guardrails-ai>=0.5.10",
 ]
 
