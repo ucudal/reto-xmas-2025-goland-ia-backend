@@ -14,15 +14,23 @@ class MinIOService:
     """Service to interact with MinIO"""
 
     def __init__(self):
-        # Parse endpoint to extract host and port (urlparse strips the scheme automatically)
-        parsed = urlparse(settings.minio_endpoint)
-        endpoint = parsed.netloc or parsed.path
+        # Parse endpoint to extract host and port
+        # Handle both URL format (http://host:port) and simple format (host:port)
+        endpoint_str = settings.minio_endpoint.strip()
+        
+        # If it starts with http:// or https://, parse as URL
+        if endpoint_str.startswith(('http://', 'https://')):
+            parsed = urlparse(endpoint_str)
+            endpoint = parsed.netloc
+        else:
+            # Simple format: host:port or just host
+            endpoint = endpoint_str
         
         # Validate that the endpoint is not empty
         if not endpoint or endpoint.strip() == "":
             error_msg = (
                 f"Invalid MinIO endpoint configuration: '{settings.minio_endpoint}'. "
-                "Endpoint must be a valid host or host:port (e.g., 'localhost:9000')"
+                "Endpoint must be a valid host or host:port (e.g., 'localhost:9000' or 'minio:9000')"
             )
             logger.error(error_msg)
             raise ValueError(error_msg)
