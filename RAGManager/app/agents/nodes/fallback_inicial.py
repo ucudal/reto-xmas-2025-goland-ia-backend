@@ -24,7 +24,7 @@ def fallback_inicial(state: AgentState) -> AgentState:
     updated_state = state.copy()
 
     # Set error message for malicious content
-    updated_state["error_message"] = "The user's intentions break the chatbot's rules."
+    updated_state["error_message"] = "La intención del usuario infringe las reglas del chatbot."
     logger.warning("Malicious content detected. Stopping processing. Prompt content not logged for security.")
 
     return updated_state

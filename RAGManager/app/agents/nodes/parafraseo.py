@@ -145,39 +145,39 @@ def parafraseo(state: AgentState) -> AgentState:
     intention_text = f"{intention_label}: {intention_message_text}"
     
     # Create LLM prompt with instructions
-    system_instruction = """You are an expert at understanding user intentions and paraphrasing them in different ways.
+    system_instruction = """Eres un experto en comprender las intenciones del usuario y parafrasearlas de diferentes maneras.
 
-Given a user's last message and their conversation history, your task is to return exactly 3 differently phrased statements that encapsulate the user's intentions.
+Dado el último mensaje del usuario y el historial de la conversación, tu tarea es devolver exactamente 3 enunciados formulados de manera distinta que encapsulen la intención del usuario.
 
-The last message represents what the user wants to know or do right now. The conversation history provides context about what they've been discussing.
+El último mensaje representa lo que el usuario quiere saber o hacer ahora mismo. El historial de la conversación aporta contexto sobre lo que se ha estado tratando.
 
-Requirements:
-- Return exactly 3 different phrasings
-- Each phrasing should capture the user's core intention from their last message
-- Use the conversation history to understand context and references (like "it", "that", "the previous thing")
-- Each phrasing should be a complete, standalone statement that makes sense without the full conversation
-- The phrasings should be diverse - use different words, sentence structures, and perspectives
-- Format your response as a JSON array of exactly 3 strings: ["statement 1", "statement 2", "statement 3"]
-- Do not include any explanation, just the JSON array
+Requisitos:
+- Devuelve exactamente 3 formulaciones diferentes
+- Cada formulación debe capturar la intención principal del usuario a partir de su último mensaje
+- Usa el historial para entender el contexto y las referencias (por ejemplo, "eso", "lo anterior", "aquello")
+- Cada formulación debe ser un enunciado completo e independiente, que se entienda sin necesidad de toda la conversación
+- Las formulaciones deben ser diversas: usa palabras, estructuras y perspectivas distintas
+- Formatea tu respuesta como un array JSON de exactamente 3 strings: ["enunciado 1", "enunciado 2", "enunciado 3"]
+- No incluyas ninguna explicación: solo el array JSON
 
-Example format:
-["What are the main features of the product?", "Can you explain the key characteristics of this product?", "I'd like to know what this product offers."]"""
+Formato de ejemplo:
+["¿Cuáles son las características principales del producto?", "¿Puedes explicar los aspectos clave de este producto?", "Me gustaría saber qué ofrece este producto."]"""
 
     # Build the prompt with context and intention
     # Both context and intention messages now clearly show sender (User/Assistant/System)
     if context_text:
-        user_prompt = f"""Conversation History (older messages for context):
+        user_prompt = f"""Historial de la conversación (mensajes anteriores para contexto):
 {context_text}
 
-Last Message (current intention):
+Último mensaje (intención actual):
 {intention_text}
 
-Return 3 differently phrased statements that encapsulate the user's intention from their last message, using the conversation history for context."""
+Devuelve 3 enunciados formulados de manera distinta que encapsulen la intención del usuario a partir de su último mensaje, usando el historial como contexto."""
     else:
-        user_prompt = f"""Message (current intention):
+        user_prompt = f"""Mensaje (intención actual):
 {intention_text}
 
-Return 3 differently phrased statements that encapsulate the user's intention from their message."""
+Devuelve 3 enunciados formulados de manera distinta que encapsulen la intención del usuario a partir de su mensaje."""
 
     # Call LLM with the prompt
     messages_for_llm = [

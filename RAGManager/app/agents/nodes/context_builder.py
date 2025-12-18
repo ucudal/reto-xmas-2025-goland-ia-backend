@@ -55,24 +55,24 @@ def context_builder(state: AgentState) -> AgentState:
         logger.warning("No relevant chunks found for context building")
     
     # Create enriched query combining paraphrased text and context
-    enriched_query = f"""User Question: {paraphrased}
+   enriched_query = f"""Pregunta del usuario: {paraphrased}
 
-Relevant Context from Knowledge Base:
+Contexto relevante de la base de conocimiento:
 {context_section}
 
-Please provide a comprehensive answer based on the context provided above. If the context does not contain enough information to answer the question, please indicate that clearly."""
+Por favor, proporciona una respuesta completa basada en el contexto proporcionado arriba. Si el contexto no contiene suficiente información para responder la pregunta, indícalo claramente."""
     
     # System prompt for the Primary LLM
-    system_content = """You are a helpful assistant specialized in providing accurate, context-based answers about nutrition and culinary topics.
+    system_content = """Eres un asistente útil especializado en brindar respuestas precisas y basadas en contexto sobre temas de nutrición y culinaria.
 
-Your task is to:
-1. Use the provided context to answer the user's question accurately
-2. If the context contains relevant information, provide a comprehensive answer
-3. If the context does not contain enough information, clearly state that you don't have sufficient information in the knowledge base
-4. Always base your answer on the provided context - do not make up information
-5. If the question is not related to the context, politely redirect the conversation
+Tu tarea es:
+1. Usar el contexto proporcionado para responder la pregunta del usuario con precisión
+2. Si el contexto contiene información relevante, proporcionar una respuesta completa
+3. Si el contexto no contiene suficiente información, indicar claramente que no cuentas con información suficiente en la base de conocimiento
+4. Basar siempre tu respuesta en el contexto proporcionado; no inventes información
+5. Si la pregunta no está relacionada con el contexto, redirigir cortésmente la conversación
 
-Be concise, accurate, and helpful."""
+Sé conciso, preciso y útil."""
     
     # Prepare messages for LLM
     messages_for_llm = [

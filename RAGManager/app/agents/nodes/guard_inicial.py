@@ -68,7 +68,7 @@ def guard_inicial(state: AgentState) -> AgentState:
             # Jailbreak or toxic language detected
             updated_state["is_malicious"] = True
             updated_state["error_message"] = (
-                "Malicious content detected. Your request contains content that violates security policies."
+                "Contenido malicioso detectado. Tu solicitud contiene contenido que viola las políticas de seguridad."
             )
             logger.warning("Malicious content detected. Prompt content not logged for security.")
 
