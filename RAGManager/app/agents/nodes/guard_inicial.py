@@ -2,23 +2,24 @@
 
 import logging
 
-from guardrails import Guard
-from guardrails.hub import DetectJailbreak
-
 from app.agents.state import AgentState
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Initialize Guard with DetectJailbreak validator
-# Note: The validator must be installed via: guardrails hub install hub://guardrails/detect_jailbreak
-_guard_inicial = Guard().use(
-    DetectJailbreak(
-        threshold=settings.guardrails_jailbreak_threshold,
-        device=settings.guardrails_device,
-        on_fail="noop",  # Don't raise exceptions, handle via state flags
-    )
-)
+# Simplified jailbreak detection for testing
+# TODO: Replace with full Guardrails implementation once validators are installed:
+# guardrails hub install hub://guardrails/detect_jailbreak
+JAILBREAK_PATTERNS = [
+    "ignore all previous instructions",
+    "ignore previous instructions",
+    "disregard all previous",
+    "forget everything",
+    "reveal sensitive",
+    "bypass restrictions",
+    "system prompt",
+    "act as",
+    "pretend you are",
+]
 
 
 def guard_inicial(state: AgentState) -> AgentState:
@@ -48,16 +49,15 @@ def guard_inicial(state: AgentState) -> AgentState:
         return updated_state
 
     try:
-        # Validate the prompt using Guardrails
-        validation_result = _guard_inicial.validate(prompt)
-
-        # Check if validation passed
-        # The validator returns ValidationResult with outcome
-        # If validation fails, outcome will indicate failure
-        if validation_result.validation_passed:
+        # Simplified validation - check for jailbreak patterns
+        # TODO: Replace with full Guardrails implementation
+        prompt_lower = prompt.lower()
+        is_jailbreak = any(pattern in prompt_lower for pattern in JAILBREAK_PATTERNS)
+        
+        if not is_jailbreak:
             updated_state["is_malicious"] = False
             updated_state["error_message"] = None
-            logger.debug("Prompt passed jailbreak detection")
+            logger.debug("Prompt passed jailbreak detection (simplified)")
         else:
             # Jailbreak detected
             updated_state["is_malicious"] = True
@@ -68,8 +68,6 @@ def guard_inicial(state: AgentState) -> AgentState:
 
     except Exception as e:
         # If validation fails due to error, log it but don't block the request
-        # This is a safety measure - if Guardrails fails, we allow the request
-        # but log the error for monitoring
         logger.error(f"Error during jailbreak detection: {e}")
         updated_state["is_malicious"] = False
         updated_state["error_message"] = None

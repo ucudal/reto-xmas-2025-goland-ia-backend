@@ -9,11 +9,18 @@ from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
-# Initialize Primary LLM with configuration from settings
-llm = ChatOpenAI(
-    model="gpt-4.1-mini",  # Primary LLM model for context-aware responses
-    openai_api_key=settings.openai_api_key,
-)
+# Lazy initialization to avoid loading API key at import time
+_llm = None
+
+def _get_llm():
+    """Get or create the LLM instance."""
+    global _llm
+    if _llm is None:
+        _llm = ChatOpenAI(
+            model="gpt-4o-mini",  # Primary LLM model for context-aware responses
+            openai_api_key=settings.openai_api_key,
+        )
+    return _llm
 
 
 def context_builder(state: AgentState) -> AgentState:
@@ -83,6 +90,7 @@ Be concise, accurate, and helpful."""
     try:
         # Call Primary LLM
         logger.info("Calling Primary LLM with enriched query")
+        llm = _get_llm()
         response = llm.invoke(messages_for_llm)
         
         # Extract response content

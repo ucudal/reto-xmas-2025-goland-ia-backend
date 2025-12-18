@@ -12,7 +12,15 @@ from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
-llm = ChatOpenAI(model="gpt-5-nano")
+# Lazy initialization to avoid loading API key at import time
+_llm = None
+
+def _get_llm():
+    """Get or create the LLM instance."""
+    global _llm
+    if _llm is None:
+        _llm = ChatOpenAI(model="gpt-4o-mini")
+    return _llm
 
 
 def parafraseo(state: AgentState) -> AgentState:
@@ -186,6 +194,7 @@ Return 3 differently phrased statements that encapsulate the user's intention fr
     ]
     
     try:
+        llm = _get_llm()
         response = llm.invoke(messages_for_llm)
         response_content = response.content.strip()
         

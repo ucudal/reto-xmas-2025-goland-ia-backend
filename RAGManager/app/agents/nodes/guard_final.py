@@ -1,23 +1,21 @@
 """Nodo Guard Final - Validates generated response for PII (risky information detection)."""
 
 import logging
-
-from guardrails import Guard
-from guardrails.hub import DetectPII
+import re
 
 from app.agents.state import AgentState
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Initialize Guard with DetectPII validator
-# Note: The validator must be installed via: guardrails hub install hub://guardrails/detect_pii
-_guard_final = Guard().use(
-    DetectPII(
-        pii_entities=settings.guardrails_pii_entities,
-        on_fail="noop",  # Don't raise exceptions, handle via state flags
-    )
-)
+# Simplified PII detection patterns for testing
+# TODO: Replace with full Guardrails implementation once validators are installed:
+# guardrails hub install hub://guardrails/detect_pii
+PII_PATTERNS = [
+    r'\b\d{3}-\d{2}-\d{4}\b',  # SSN format
+    r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b',  # Credit card format
+    r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',  # Email
+    r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # Phone number
+]
 
 
 def guard_final(state: AgentState) -> AgentState:
@@ -45,16 +43,14 @@ def guard_final(state: AgentState) -> AgentState:
         return updated_state
 
     try:
-        # Validate the generated response using Guardrails
-        validation_result = _guard_final.validate(generated_response)
-
-        # Check if validation passed
-        # The validator returns ValidationResult with outcome
-        # If validation fails, outcome will indicate failure
-        if validation_result.validation_passed:
+        # Simplified validation - check for PII patterns
+        # TODO: Replace with full Guardrails implementation
+        has_pii = any(re.search(pattern, generated_response) for pattern in PII_PATTERNS)
+        
+        if not has_pii:
             updated_state["is_risky"] = False
             updated_state["error_message"] = None
-            logger.debug("Generated response passed PII detection")
+            logger.debug("Generated response passed PII detection (simplified)")
         else:
             # PII detected
             updated_state["is_risky"] = True
@@ -65,8 +61,6 @@ def guard_final(state: AgentState) -> AgentState:
 
     except Exception as e:
         # If validation fails due to error, log it but don't block the request
-        # This is a safety measure - if Guardrails fails, we allow the request
-        # but log the error for monitoring
         logger.error(f"Error during PII detection: {e}")
         updated_state["is_risky"] = False
         updated_state["error_message"] = None
