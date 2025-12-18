@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     minio_access_key: str
     minio_secret_key: str
     minio_bucket: str
-    minio_secure: bool = True
+    minio_use_ssl: bool = True
 
     # OpenAI Configuration
     openai_api_key: str
