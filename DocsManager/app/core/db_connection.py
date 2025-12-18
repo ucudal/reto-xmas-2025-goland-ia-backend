@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
@@ -45,14 +45,6 @@ def get_db():
 
 def init_db():
     """
-    Initialize database and verify PGVector extension is available.
+    Initialize database and create tables if they don't exist.
     """
-    with engine.connect() as conn:
-        # Check if pgvector extension exists
-        result = conn.execute(
-            text("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector')")
-        )
-        if not result.scalar():
-            raise RuntimeError(
-                "PGVector extension is not installed. Please run the init.sql script."
-            )
+    Base.metadata.create_all(bind=engine)

@@ -7,8 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database_connection import get_db
-from app.schemas.chat import ChatHistoryResponse, ChatMessageResponse, ProcessMessageRequest, ProcessMessageResponse
-from app.services.chat import get_chat_history, process_message_with_agent
+from app.schemas.chat import (
+    ChatHistoryResponse,
+    ChatMessageResponse,
+    UserMessageRequest,
+    AssistantMessageResponse,
+)
+from app.repositories.chat_repository import get_chat_history
+from app.services.chat import create_user_message_and_process
 
 logger = logging.getLogger(__name__)
 
@@ -70,40 +76,46 @@ async def get_chat_history_endpoint(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.post("/process", response_model=ProcessMessageResponse)
-async def process_message_endpoint(
-    request: ProcessMessageRequest,
+@router.post("/messages", response_model=AssistantMessageResponse)
+def post_user_message(
+    request: UserMessageRequest,
     db: Session = Depends(get_db),
-) -> ProcessMessageResponse:
+) -> AssistantMessageResponse:
     """
-    Process a user message through the LangGraph agent.
+    Process a user message through the complete chat flow.
 
-    This endpoint takes a user message and optional session_id, runs it through
-    the complete LangGraph agent flow (guard, paraphrase, retrieval, generation,
-    final guard), and returns the generated assistant response.
+    This endpoint:
+    1. Creates or retrieves a chat session
+    2. Saves the user's message to the database
+    3. Processes the message through the LangGraph agent (guards, paraphrase, retrieval, generation)
+    4. Saves the assistant's response to the database
+    5. Returns the assistant's response to the user
 
     Args:
-        request: ProcessMessageRequest containing message and optional session_id
+        request: UserMessageRequest containing the message and optional session_id
         db: Database session dependency
 
     Returns:
-        ProcessMessageResponse containing the generated assistant message
+        AssistantMessageResponse containing session_id and the assistant's message
 
     Raises:
-        HTTPException: 400 for validation errors
+        HTTPException: 400 for validation errors (empty message, invalid session)
         HTTPException: 500 for processing errors
     """
-    logger.info(f"Received message processing request for session: {request.session_id}")
+    logger.info(f"Received user message for session: {request.session_id}")
 
     try:
-        # Process message through the agent
-        response_message = await process_message_with_agent(
+        # Process complete flow: save user msg, run agent, save assistant msg
+        assistant_msg, session_id = create_user_message_and_process(
             db=db,
             message=request.message,
             session_id=request.session_id,
         )
 
-        return ProcessMessageResponse(message=response_message)
+        return AssistantMessageResponse(
+            session_id=session_id,
+            message=assistant_msg.message,
+        )
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")

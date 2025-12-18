@@ -16,25 +16,6 @@ CREATE TABLE IF NOT EXISTS documents (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Tabla document_chunks: Guarda los trozos (chunks) del documento + sus embeddings
-CREATE TABLE IF NOT EXISTS document_chunks (
-    id SERIAL PRIMARY KEY,
-    document_id INT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    chunk_index INT NOT NULL,
-    content TEXT NOT NULL,
-    embedding vector(1536) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_document_chunk UNIQUE (document_id, chunk_index)
-);
-
--- Índice HNSW para búsquedas rápidas por similitud de embeddings
-CREATE INDEX IF NOT EXISTS document_chunks_embedding_idx 
-ON document_chunks USING hnsw (embedding vector_cosine_ops);
-
--- Índice para búsquedas por documento
-CREATE INDEX IF NOT EXISTS document_chunks_document_id_idx 
-ON document_chunks(document_id);
-
 -- ============================================
 -- B. TABLAS DE CHAT
 -- ============================================

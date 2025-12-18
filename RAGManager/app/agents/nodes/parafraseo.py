@@ -6,7 +6,7 @@ from uuid import UUID
 
 from app.agents.state import AgentState
 from app.core.database_connection import SessionLocal
-from app.services.chat import save_user_message
+from app.repositories.chat_repository import save_user_message
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 

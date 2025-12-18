@@ -39,9 +39,6 @@ class Settings(BaseSettings):
     rabbitmq_queue_name: str = "document.process"
     rabbitmq_exchange_name: str = "minio-events"
 
-    # RAGManager Configuration
-    ragmanager_url: str = "http://localhost:8001"  # URL of the RAGManager service
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

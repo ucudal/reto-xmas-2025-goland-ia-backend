@@ -5,7 +5,7 @@ from uuid import UUID
 
 from app.agents.state import AgentState
 from app.core.database_connection import SessionLocal
-from app.services.chat import get_chat_history
+from app.repositories.chat_repository import get_chat_history
 
 logger = logging.getLogger(__name__)
 

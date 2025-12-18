@@ -1,0 +1,207 @@
+{
+	"info": {
+		"_postman_id": "docsmanager-collection-001",
+		"name": "DocsManager API",
+		"description": "API endpoints for document management service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{docsmanager_url}}/health",
+							"host": [
+								"{{docsmanager_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if DocsManager service is healthy"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Documents",
+			"item": [
+				{
+					"name": "Upload Document",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "Document file to upload (PDF, TXT, DOCX, MD)"
+								},
+								{
+									"key": "title",
+									"value": "My Document Title",
+									"type": "text",
+									"description": "Optional: Document title"
+								},
+								{
+									"key": "description",
+									"value": "Document description",
+									"type": "text",
+									"description": "Optional: Document description"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{docsmanager_url}}/api/v1/documents/upload",
+							"host": [
+								"{{docsmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"documents",
+								"upload"
+							]
+						},
+						"description": "Upload a document to MinIO and trigger processing"
+					},
+					"response": []
+				},
+				{
+					"name": "List Documents",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{docsmanager_url}}/api/v1/documents?skip=0&limit=10",
+							"host": [
+								"{{docsmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"documents"
+							],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0",
+									"description": "Number of records to skip (pagination)"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Maximum number of records to return"
+								}
+							]
+						},
+						"description": "Get a list of all uploaded documents"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Document by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{docsmanager_url}}/api/v1/documents/:document_id",
+							"host": [
+								"{{docsmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"documents",
+								":document_id"
+							],
+							"variable": [
+								{
+									"key": "document_id",
+									"value": "123e4567-e89b-12d3-a456-426614174000",
+									"description": "UUID of the document"
+								}
+							]
+						},
+						"description": "Get details of a specific document by its UUID"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Document",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{docsmanager_url}}/api/v1/documents/:document_id",
+							"host": [
+								"{{docsmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"documents",
+								":document_id"
+							],
+							"variable": [
+								{
+									"key": "document_id",
+									"value": "123e4567-e89b-12d3-a456-426614174000",
+									"description": "UUID of the document to delete"
+								}
+							]
+						},
+						"description": "Delete a document from the system (MinIO and database)"
+					},
+					"response": []
+				},
+				{
+					"name": "Download Document",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{docsmanager_url}}/api/v1/documents/:document_id/download",
+							"host": [
+								"{{docsmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"documents",
+								":document_id",
+								"download"
+							],
+							"variable": [
+								{
+									"key": "document_id",
+									"value": "123e4567-e89b-12d3-a456-426614174000",
+									"description": "UUID of the document to download"
+								}
+							]
+						},
+						"description": "Download the original document file"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "docsmanager_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}
+

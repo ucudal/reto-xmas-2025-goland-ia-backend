@@ -1,0 +1,176 @@
+{
+	"info": {
+		"_postman_id": "ragmanager-collection-001",
+		"name": "RAGManager API",
+		"description": "API endpoints for RAG (Retrieval Augmented Generation) and chat management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ragmanager_url}}/health",
+							"host": [
+								"{{ragmanager_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if RAGManager service is healthy"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat",
+			"item": [
+				{
+					"name": "Send Message (New Session)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"¿Qué información tienes sobre los documentos?\"\n}"
+						},
+						"url": {
+							"raw": "{{ragmanager_url}}/api/v1/chat/messages",
+							"host": [
+								"{{ragmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"chat",
+								"messages"
+							]
+						},
+						"description": "Send a message to start a new chat session. Returns the assistant's response and a new session_id."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message (Existing Session)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": \"Cuéntame más sobre eso\",\n  \"session_id\": \"{{session_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{ragmanager_url}}/api/v1/chat/messages",
+							"host": [
+								"{{ragmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"chat",
+								"messages"
+							]
+						},
+						"description": "Send a message within an existing chat session. The AI will use the conversation history as context."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ragmanager_url}}/api/v1/chat/history/:session_id",
+							"host": [
+								"{{ragmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"chat",
+								"history",
+								":session_id"
+							],
+							"variable": [
+								{
+									"key": "session_id",
+									"value": "{{session_id}}",
+									"description": "UUID of the chat session"
+								}
+							]
+						},
+						"description": "Retrieve the last 10 messages from a chat session (most recent first)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Documents",
+			"item": [
+				{
+					"name": "Process PDF from MinIO",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"minio_url\": \"http://minio:9000/documents/my-document.pdf\"\n}"
+						},
+						"url": {
+							"raw": "{{ragmanager_url}}/api/v1/documents/process",
+							"host": [
+								"{{ragmanager_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"documents",
+								"process"
+							]
+						},
+						"description": "Process a PDF file from MinIO URL through the RAG pipeline:\n1. PDF to LangChain Document conversion\n2. Document chunking\n3. Embedding generation\n4. Database storage with pgvector"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "ragmanager_url",
+			"value": "http://localhost:8001",
+			"type": "string"
+		},
+		{
+			"key": "session_id",
+			"value": "",
+			"type": "string",
+			"description": "Set this after creating a chat session (from the response of Send Message)"
+		}
+	]
+}
+

@@ -30,14 +30,15 @@ class ChatHistoryResponse(BaseModel):
     count: int
 
 
-class ProcessMessageRequest(BaseModel):
-    """Request schema for processing a message through the agent."""
+class UserMessageRequest(BaseModel):
+    """Request schema for posting a user message."""
 
     message: str
     session_id: Optional[UUID] = None
 
 
-class ProcessMessageResponse(BaseModel):
-    """Response schema for processed message."""
+class AssistantMessageResponse(BaseModel):
+    """Response schema for assistant message."""
 
+    session_id: UUID
     message: str

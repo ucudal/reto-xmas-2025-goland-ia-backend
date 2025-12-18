@@ -1,283 +1,494 @@
-# Reto Goland IA Backend
+# Sistema RAG con LangGraph - Goland IA
 
-Este proyecto contiene los servicios de backend para el Reto Goland IA.
+Sistema de Retrieval-Augmented Generation (RAG) con procesamiento avanzado de documentos y chat inteligente usando LangGraph.
 
-## Estructura del Proyecto
+## 🚀 Características
 
-```text
-reto-xmas-2025-goland-ia-backend/
-├── docker-compose.yml          # Configuración de servicios (PostgreSQL, RabbitMQ, MinIO)
-├── Dockerfile.pgvector         # Dockerfile para PostgreSQL con pgvector
-├── init.sql                    # Script de inicialización de la base de datos
-├── DocsManager/                # Servicio de gestión de documentos
-└── RAGManager/                 # Servicio de RAG (Retrieval-Augmented Generation)
-```
+- **Upload de PDFs**: Carga documentos y procesamiento automático
+- **Vector Search**: Búsqueda semántica en documentos usando pgvector
+- **Chat Inteligente**: Conversación con agente LangGraph que usa RAG
+- **Guardrails**: Validaciones de seguridad pre y post generación
+- **Procesamiento Asíncrono**: Worker para PDFs con RabbitMQ
+- **Historial de Chat**: Contexto de conversación persistente
 
-## Servicios Disponibles
+## 📋 Tabla de Contenidos
 
-### 1. PostgreSQL con pgvector
+- [Arquitectura](#arquitectura)
+- [Requisitos](#requisitos)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Uso](#uso)
+- [API Endpoints](#api-endpoints)
+- [Desarrollo](#desarrollo)
+- [Testing](#testing)
 
-- **Puerto:** 5432
-- **Usuario:** Configurado en `.env` (por defecto: `postgres`)
-- **Contraseña:** Configurado en `.env` (por defecto: `postgres`)
-- **Base de datos:** Configurado en `.env` (por defecto: `vectordb`)
-- **Extensiones:** vector, uuid-ossp
+## 🏗️ Arquitectura
 
-### 2. RabbitMQ
+El sistema está dividido en dos microservicios:
 
-- **Puerto AMQP:** 5672
-- **Puerto Management UI:** 15672
-- **Usuario:** Configurado en `.env` (por defecto: `guest`)
-- **Contraseña:** Configurado en `.env` (por defecto: `guest`)
-- **Management UI:** <http://localhost:15672>
+### DocsManager (Puerto 8000)
+- Manejo de uploads de documentos
+- Gestión de MinIO
+- Publicación a RabbitMQ
 
-### 3. MinIO (S3 Compatible)
+### RAGManager (Puerto 8001)
+- **Chat completo**: Recibe mensajes, ejecuta agente, guarda respuestas
+- Procesamiento RAG con LangGraph
+- Vector store con pgvector
+- Worker de procesamiento de PDFs
+- Guardrails y validaciones
 
-- **Puerto API:** 9000
-- **Puerto Web Console:** 9001
-- **Usuario:** Configurado en `.env` (por defecto: `minioadmin`)
-- **Contraseña:** Configurado en `.env` (por defecto: `minioadmin`)
-- **Console:** <http://localhost:9001>
+Ver [ARCHITECTURE.md](./ARCHITECTURE.md) para más detalles.
 
-## Configuración Inicial
+## 📦 Requisitos
 
-### Variables de Entorno
+- Python 3.12+
+- PostgreSQL 14+ con pgvector
+- MinIO
+- RabbitMQ
+- OpenAI API Key
+- Guardrails AI API Key
 
-El proyecto utiliza archivos `.env` en dos niveles:
+## 🔧 Instalación
 
-1. **`.env` en el directorio raíz**: Para configurar los servicios de infraestructura (Docker Compose)
-2. **`.env` en cada servicio Python** (`DocsManager/.env`, `RAGManager/.env`): Para configurar las aplicaciones
-
-#### Configuración paso a paso:
-
-**1. Copia el archivo de ejemplo del directorio raíz:**
-```bash
-cp .env.example .env
-```
-
-**2. Copia la configuración para cada servicio Python:**
-```bash
-# Para DocsManager
-cp DocsManager/.env.example DocsManager/.env
-
-# Para RAGManager
-cp RAGManager/.env.example RAGManager/.env
-```
-
-**3. Personaliza las credenciales según tu entorno:**
-
-**Para desarrollo local:**
-- Puedes usar los valores por defecto
-- Asegúrate de que en los archivos `.env` de las aplicaciones:
-  - `MINIO_ENDPOINT=localhost:9000`
-  - `MINIO_USE_SSL=false`
-  - `RABBITMQ_HOST=localhost`
-- Agrega tu clave de OpenAI: `OPENAI_API_KEY=tu-clave-aquí`
-
-**Para producción/entornos no locales:**
-- **DEBES** cambiar todas las contraseñas por valores seguros
-- Configura endpoints externos (ej: `MINIO_ENDPOINT=https://minio.tudominio.com`)
-- Habilita SSL: `MINIO_USE_SSL=true`
-- Usa las credenciales correctas de producción
-
-### Variables de Entorno Disponibles
-
-El archivo `.env.example` contiene:
-
-**Configuración de Docker Compose (servicios de infraestructura):**
-
-**PostgreSQL:**
-- `POSTGRES_USER`: Usuario de PostgreSQL (por defecto: `postgres`)
-- `POSTGRES_PASSWORD`: Contraseña de PostgreSQL (por defecto: `postgres`)
-- `POSTGRES_DB`: Nombre de la base de datos (por defecto: `vectordb`)
-- `POSTGRES_PORT`: Puerto de PostgreSQL (por defecto: `5432`)
-
-**RabbitMQ:**
-- `RABBITMQ_USER`: Usuario de RabbitMQ (por defecto: `guest`)
-- `RABBITMQ_PASSWORD`: Contraseña de RabbitMQ (por defecto: `guest`)
-- `RABBITMQ_HOST`: Host de RabbitMQ (por defecto: `rabbitmq`)
-- `RABBITMQ_PORT`: Puerto AMQP (por defecto: `5672`)
-- `RABBITMQ_MANAGEMENT_PORT`: Puerto Management UI (por defecto: `15672`)
-
-**MinIO (servicios Docker):**
-- `MINIO_ROOT_USER`: Usuario root de MinIO (por defecto: `minioadmin`)
-- `MINIO_ROOT_PASSWORD`: Contraseña root de MinIO (por defecto: `minioadmin`)
-
-**Configuración de Aplicaciones (DocsManager/RAGManager):**
-
-**MinIO (acceso desde aplicaciones):**
-- `MINIO_ENDPOINT`: Endpoint de MinIO (por defecto: `localhost:9000`)
-- `MINIO_ACCESS_KEY`: Clave de acceso (por defecto: `minioadmin`)
-- `MINIO_SECRET_KEY`: Clave secreta (por defecto: `minioadmin`)
-- `MINIO_BUCKET`: Nombre del bucket (por defecto: `goland-bucket`)
-- `MINIO_USE_SSL`: Usar SSL (por defecto: `false` para local)
-
-**OpenAI:**
-- `OPENAI_API_KEY`: Tu clave de API de OpenAI
-
-**Chunking:**
-- `CHUNK_SIZE`: Tamaño de los chunks (por defecto: `1000`)
-- `CHUNK_OVERLAP`: Solapamiento entre chunks (por defecto: `200`)
-
-⚠️ **Importante:** 
-- Los archivos `.env` NO deben ser incluidos en el control de versiones (ya están en `.gitignore`)
-- Las credenciales por defecto son SOLO para desarrollo local
-- En producción, usa contraseñas seguras y aleatorias
-
-## Inicio Rápido
-
-### Levantar todos los servicios
+### 1. Clonar el repositorio
 
 ```bash
-docker-compose up -d
+git clone <repository-url>
+cd reto-xmas-2025-goland-ia-backend
 ```
 
-### Ver logs de los servicios
+### 2. Instalar dependencias
+
+#### Usando uv (recomendado)
 
 ```bash
-# Todos los servicios
-docker-compose logs -f
+# DocsManager
+cd DocsManager
+uv sync
 
-# Servicio específico
-docker-compose logs -f postgres
-docker-compose logs -f rabbitmq
-docker-compose logs -f minio
+# RAGManager
+cd ../RAGManager
+uv sync
 ```
 
-### Verificar el estado de los servicios
+#### Usando pip
 
 ```bash
-docker-compose ps
+# DocsManager
+cd DocsManager
+pip install -r requirements.txt
+
+# RAGManager
+cd ../RAGManager
+pip install -r requirements.txt
 ```
 
-### Detener los servicios
+### 3. Iniciar infraestructura
 
 ```bash
-docker-compose down
+# En el directorio raíz
+docker-compose up -d postgres rabbitmq minio
 ```
 
-### Detener y eliminar volúmenes (⚠️ esto borrará todos los datos)
+### 4. Inicializar base de datos
 
 ```bash
-docker-compose down -v
+# Ejecutar script SQL de inicialización
+psql -U postgres -h localhost -d goland_ia_db -f db-init/01-initial-setup.sql
 ```
 
-## Configuración de los Servicios de Python
+## ⚙️ Configuración
 
-Cada servicio Python (DocsManager, RAGManager) tiene su propio archivo `.env.example` con las variables necesarias.
+### DocsManager
 
-### Configuración rápida
+Crear `.env` en `DocsManager/`:
 
 ```bash
-# Para DocsManager
-cp DocsManager/.env.example DocsManager/.env
-
-# Para RAGManager
-cp RAGManager/.env.example RAGManager/.env
-```
-
-Luego edita cada archivo `.env` para:
-1. Agregar tu clave de OpenAI: `OPENAI_API_KEY=tu-clave-aquí`
-2. Ajustar endpoints si usas servicios externos
-3. Cambiar contraseñas si no usas las del desarrollo local
-
-### Configuración manual
-
-Si prefieres configurar manualmente, estos son los valores necesarios:
-
-#### DocsManager/.env
-
-```env
-# PostgreSQL Configuration
+# PostgreSQL
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
-POSTGRES_DB=vectordb
+POSTGRES_DB=goland_ia_db
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
-# RabbitMQ Configuration
+# RabbitMQ
 RABBITMQ_USER=guest
 RABBITMQ_PASSWORD=guest
 RABBITMQ_HOST=localhost
 RABBITMQ_PORT=5672
 
-# MinIO Configuration
+# MinIO
 MINIO_ENDPOINT=localhost:9000
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=goland-bucket
+MINIO_BUCKET=documents
+MINIO_FOLDER=rag-docs
 MINIO_USE_SSL=false
-
-# OpenAI Configuration
-OPENAI_API_KEY=tu-clave-de-openai
-
-# Chunking Configuration
-CHUNK_SIZE=1000
-CHUNK_OVERLAP=200
 ```
 
-#### RAGManager/.env
+### RAGManager
 
-```env
-# PostgreSQL Configuration
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=vectordb
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+Crear `.env` en `RAGManager/`:
 
-# RabbitMQ Configuration
+```bash
+# PostgreSQL
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/goland_ia_db
+
+# OpenAI
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# MinIO
+MINIO_ENDPOINT=localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=documents
+MINIO_USE_SSL=false
+
+# RabbitMQ
 RABBITMQ_USER=guest
 RABBITMQ_PASSWORD=guest
 RABBITMQ_HOST=localhost
 RABBITMQ_PORT=5672
+RABBITMQ_QUEUE_NAME=document.process
 
-# OpenAI Configuration (si es necesario)
-OPENAI_API_KEY=tu-clave-de-openai
+# Guardrails
+GUARDRAILS_API_KEY=your-guardrails-key-here
+GUARDRAILS_JAILBREAK_THRESHOLD=0.9
+GUARDRAILS_DEVICE=cpu
+
+# Configuración
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=200
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSION=1536
 ```
 
-**Nota importante sobre hosts:**
-- Si las aplicaciones Python corren **fuera de Docker** (desarrollo local), usa `localhost` para `RABBITMQ_HOST` y `POSTGRES_HOST`
-- Si las aplicaciones Python corren **dentro de Docker**, usa los nombres de servicio: `rabbitmq`, `postgres`, `minio`
+## 🎯 Uso
 
-## Base de Datos
-
-El script `init.sql` crea automáticamente las siguientes tablas:
-
-### Tablas de RAG/Vector Store:
-- `documents`: Metadatos de documentos subidos
-- `document_chunks`: Chunks de documentos con embeddings
-
-### Tablas de Chat:
-- `chat_sessions`: Sesiones de conversación
-- `chat_messages`: Mensajes del chat
-
-## Troubleshooting
-
-### Puerto ya en uso
-
-Si algún puerto está en uso, puedes modificar los puertos en `docker-compose.yml`:
-
-```yaml
-ports:
-  - "PUERTO_HOST:PUERTO_CONTENEDOR"
-```
-
-### Recrear contenedores desde cero
+### Iniciar los servicios
 
 ```bash
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up -d
+# Terminal 1 - DocsManager
+cd DocsManager
+uvicorn main:app --reload --port 8000
+
+# Terminal 2 - RAGManager
+cd RAGManager
+uvicorn main:app --reload --port 8001
+
+# Terminal 3 - Worker de PDFs
+cd RAGManager
+python -m app.workers.pdf_processor_consumer
 ```
 
-### Verificar salud de los servicios
+### Acceder a las APIs
+
+- **DocsManager**: http://localhost:8000/docs
+- **RAGManager**: http://localhost:8001/docs
+
+## 📡 API Endpoints
+
+### RAGManager - Chat Principal
+
+#### POST /chat/messages
+
+Enviar un mensaje y recibir respuesta del agente RAG.
+
+**Request:**
+```json
+{
+  "message": "¿Cuáles son los beneficios del aguacate?",
+  "session_id": null
+}
+```
+
+**Response:**
+```json
+{
+  "session_id": "123e4567-e89b-12d3-a456-426614174000",
+  "message": "El aguacate es una fruta rica en grasas saludables..."
+}
+```
+
+**Proceso interno:**
+1. Guarda mensaje del usuario
+2. Ejecuta grafo LangGraph:
+   - `agent_host`: Prepara estado e historial
+   - `guard_inicial`: Valida contenido malicioso
+   - `parafraseo`: Parafrasea el mensaje
+   - `retriever`: Busca en vector DB
+   - `context_builder`: Genera respuesta con GPT-4
+   - `guard_final`: Valida respuesta
+3. Guarda respuesta del asistente
+4. Retorna respuesta
+
+#### GET /chat/history/{session_id}
+
+Obtener historial de una conversación.
+
+**Response:**
+```json
+{
+  "session_id": "123e4567-e89b-12d3-a456-426614174000",
+  "messages": [
+    {
+      "id": 1,
+      "sender": "user",
+      "message": "¿Cuáles son los beneficios del aguacate?",
+      "created_at": "2025-12-18T10:00:00"
+    },
+    {
+      "id": 2,
+      "sender": "assistant",
+      "message": "El aguacate es rico en...",
+      "created_at": "2025-12-18T10:00:05"
+    }
+  ],
+  "count": 2
+}
+```
+
+### DocsManager - Gestión de Documentos
+
+#### POST /documents/upload
+
+Subir un PDF para procesamiento.
+
+**Request:**
+```bash
+curl -X POST "http://localhost:8000/documents/upload" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@documento.pdf"
+```
+
+**Response:**
+```json
+{
+  "filename": "documento.pdf",
+  "path": "rag-docs/documento.pdf",
+  "status": "uploaded"
+}
+```
+
+#### GET /documents
+
+Listar todos los documentos.
+
+**Response:**
+```json
+{
+  "documents": [
+    {
+      "id": 1,
+      "name": "documento.pdf",
+      "upload_date": "2025-12-18T10:00:00",
+      "status": "processed"
+    }
+  ]
+}
+```
+
+## 🛠️ Desarrollo
+
+### Estructura del Proyecto
+
+```
+reto-xmas-2025-goland-ia-backend/
+├── DocsManager/              # Servicio de gestión de documentos
+│   ├── app/
+│   │   ├── api/             # Endpoints FastAPI
+│   │   ├── core/            # Configuración y DB
+│   │   ├── models/          # Modelos SQLAlchemy
+│   │   ├── schemas/         # Schemas Pydantic
+│   │   └── services/        # Lógica de negocio
+│   ├── main.py
+│   └── pyproject.toml
+│
+├── RAGManager/              # Servicio RAG con LangGraph
+│   ├── app/
+│   │   ├── agents/          # Grafo LangGraph
+│   │   │   ├── nodes/       # Nodos del grafo
+│   │   │   ├── graph.py     # Definición del grafo
+│   │   │   ├── routing.py   # Routing condicional
+│   │   │   └── state.py     # Estado del agente
+│   │   ├── api/             # Endpoints FastAPI
+│   │   ├── core/            # Configuración y DB
+│   │   ├── models/          # Modelos SQLAlchemy
+│   │   ├── schemas/         # Schemas Pydantic
+│   │   ├── services/        # Lógica de negocio
+│   │   └── workers/         # Worker RabbitMQ
+│   ├── main.py
+│   └── pyproject.toml
+│
+├── docker-compose.yml       # Infraestructura
+├── ARCHITECTURE.md          # Documentación de arquitectura
+└── README.md               # Este archivo
+```
+
+### Grafo LangGraph
+
+El agente RAG implementa el siguiente flujo:
+
+```
+START → agent_host → guard_inicial → parafraseo → retriever → 
+context_builder → guard_final → END
+```
+
+Con validaciones y fallbacks en cada paso.
+
+### Linting y Formato
 
 ```bash
-docker-compose ps
+# Usando ruff
+cd DocsManager
+ruff check .
+ruff format .
+
+cd RAGManager
+ruff check .
+ruff format .
 ```
 
-Los servicios deberían mostrar "healthy" en la columna Status.
+## 🧪 Testing
 
+### Test Manual con cURL
 
+#### 1. Subir un PDF
 
+```bash
+curl -X POST "http://localhost:8000/documents/upload" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@test.pdf"
+```
+
+#### 2. Enviar mensaje al chat
+
+```bash
+curl -X POST "http://localhost:8001/chat/messages" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "¿Qué información tienes sobre nutrición?",
+    "session_id": null
+  }'
+```
+
+#### 3. Obtener historial
+
+```bash
+curl -X GET "http://localhost:8001/chat/history/{session_id}" \
+  -H "accept: application/json"
+```
+
+### Tests Automatizados (TODO)
+
+```bash
+# DocsManager
+cd DocsManager
+pytest
+
+# RAGManager
+cd RAGManager
+pytest
+```
+
+## 🐳 Docker
+
+### Desarrollo
+
+```bash
+docker-compose up -d postgres rabbitmq minio
+```
+
+### Producción (TODO)
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 📊 Monitoreo
+
+### Logs
+
+```bash
+# DocsManager
+tail -f DocsManager/logs/app.log
+
+# RAGManager
+tail -f RAGManager/logs/app.log
+```
+
+### RabbitMQ Management
+
+- URL: http://localhost:15672
+- Usuario: guest
+- Password: guest
+
+### MinIO Console
+
+- URL: http://localhost:9001
+- Usuario: minioadmin
+- Password: minioadmin
+
+## 🔐 Seguridad
+
+### Guardrails Implementados
+
+1. **Guard Inicial**: Detecta jailbreak y contenido malicioso
+2. **Guard Final**: Detecta PII y contenido sensible
+
+### Validaciones
+
+- Tipos de archivo permitidos
+- Tamaño máximo de archivos
+- Sanitización de inputs
+- Rate limiting (por implementar)
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crear branch (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push al branch (`git push origin feature/AmazingFeature`)
+5. Abrir Pull Request
+
+## 📝 Licencia
+
+Este proyecto es privado y confidencial.
+
+## 👥 Equipo
+
+Desarrollado por el equipo de Goland IA.
+
+## 📧 Contacto
+
+Para preguntas o soporte, contactar al equipo de desarrollo.
+
+## 🗺️ Roadmap
+
+### v1.0 (Actual)
+- ✅ Upload de PDFs
+- ✅ Chat con RAG
+- ✅ Guardrails
+- ✅ Historial de conversación
+
+### v1.1 (Próximo)
+- ⏳ Streaming de respuestas
+- ⏳ Cache con Redis
+- ⏳ Autenticación JWT
+- ⏳ Rate limiting
+
+### v2.0 (Futuro)
+- 📋 WebSockets para chat
+- 📋 Multi-idioma
+- 📋 Tests automatizados
+- 📋 CI/CD pipeline
+- 📋 Métricas y monitoreo
+
+## 🙏 Agradecimientos
+
+- LangChain & LangGraph
+- FastAPI
+- OpenAI
+- Guardrails AI

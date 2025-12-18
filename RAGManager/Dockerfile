@@ -19,26 +19,22 @@ COPY pyproject.toml uv.lock* ./
 
 RUN uv sync --no-dev --no-cache
 
-# Run the Guardrails configure command to create a .guardrailsrc file
-# Only configure if GUARDRAILS_API_KEY is provided
-RUN uv run guardrails configure --enable-metrics --enable-remote-inferencing --token "$GUARDRAILS_API_KEY"
-
-# Install required guardrails validators
-RUN uv run guardrails hub install hub://guardrails/detect_jailbreak --no-install-local-models
-RUN uv run guardrails hub install hub://guardrails/detect_pii --no-install-local-models
-RUN uv run guardrails hub install hub://guardrails/toxic_language>=0.0.2 --no-install-local-models
-
-# The ToxicLanguage Validator uses the punkt tokenizer, so we need to download that to a known directory
-# Set the directory for nltk data
-ENV NLTK_DATA=/opt/nltk_data
-
-# Download punkt data
-RUN uv run python -m nltk.downloader -d /opt/nltk_data punkt_tab
-
 COPY . .
 
 # Ensure dependencies are synced after copying files
 RUN uv sync --no-dev --no-cache
+
+# Configure Guardrails with API key (creates .guardrailsrc)
+RUN uv run guardrails configure --enable-metrics --enable-remote-inferencing --token "$GUARDRAILS_API_KEY"
+
+# Install required guardrails validators (AFTER final uv sync)
+RUN uv run guardrails hub install hub://guardrails/detect_jailbreak --no-install-local-models
+RUN uv run guardrails hub install hub://guardrails/detect_pii --no-install-local-models
+RUN uv run guardrails hub install hub://guardrails/toxic_language>=0.0.2 --no-install-local-models
+
+# The ToxicLanguage validator uses the punkt tokenizer
+ENV NLTK_DATA=/opt/nltk_data
+RUN uv run python -m nltk.downloader -d /opt/nltk_data punkt_tab
 
 EXPOSE 8000
 

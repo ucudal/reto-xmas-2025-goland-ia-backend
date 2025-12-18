@@ -2,50 +2,17 @@
 
 import logging
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Tuple
 
 from sqlalchemy.orm import Session
 from langchain_core.messages import HumanMessage
 
 from app.models.chat import ChatMessage, ChatSession
+from app.repositories.chat_repository import get_chat_history
 from app.agents.graph import create_agent_graph
 from app.agents.state import AgentState
 
 logger = logging.getLogger(__name__)
-
-
-def get_chat_history(db: Session, session_id: UUID) -> list[ChatMessage]:
-    """
-    Retrieve the last 10 messages from a chat session.
-
-    Args:
-        db: SQLAlchemy database session
-        session_id: UUID of the chat session
-
-    Returns:
-        List of ChatMessage objects ordered by created_at DESC (most recent first)
-
-    Raises:
-        ValueError: If the chat session doesn't exist
-    """
-    # First, validate that the session exists
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise ValueError(f"Chat session {session_id} not found")
-
-    # Query the last 10 messages for this session, ordered by created_at DESC
-    messages = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.session_id == session_id)
-        .order_by(ChatMessage.created_at.desc())
-        .limit(10)
-        .all()
-    )
-
-    # Reverse to get chronological order (oldest first)
-    # But the plan says "most recent first", so we'll keep DESC order
-    logger.info(f"Retrieved {len(messages)} messages for session {session_id}")
-    return messages
 
 
 async def process_message_with_agent(
@@ -126,43 +93,90 @@ async def process_message_with_agent(
         raise Exception(f"Failed to process message through agent: {str(e)}")
 
 
-def save_user_message(db: Session, message: str, session_id: UUID | None = None) -> tuple[ChatMessage, UUID]:
+def create_user_message_and_process(
+    db: Session,
+    message: str,
+    session_id: Optional[UUID] = None,
+) -> Tuple[ChatMessage, UUID]:
     """
-    Save a user message to a chat session.
-
+    Complete flow: save user message, process through agent, save assistant response.
+    
+    This function handles the entire chat flow:
+    1. Creates or retrieves a chat session
+    2. Saves the user's message to the database
+    3. Processes the message through the LangGraph agent
+    4. Saves the assistant's response to the database
+    5. Returns the assistant message and session_id
+    
     Args:
-        db: SQLAlchemy database session
-        message: The user's message text
-        session_id: UUID of the chat session (optional - creates new session if not provided)
-
+        db: Database session
+        message: User's message text
+        session_id: Optional existing session ID
+        
     Returns:
-        Tuple of (saved ChatMessage object, session_id UUID)
-
+        Tuple of (assistant_msg, session_id)
+        
     Raises:
-        ValueError: If the provided session_id doesn't exist
+        ValueError: If session_id provided but doesn't exist
+        Exception: For processing or database errors
     """
-    # 1. If no session_id provided, create a new session
+    # 1. Create or retrieve session
     if not session_id:
         session = ChatSession()
         db.add(session)
-        db.flush()  # Generate UUID without committing
+        db.flush()  # Generate UUID without commit
         session_id = session.id
         logger.info(f"Created new chat session: {session_id}")
     else:
-        # Validate that the session exists
         session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
         if not session:
             raise ValueError(f"Chat session {session_id} not found")
+        logger.info(f"Using existing chat session: {session_id}")
 
-    # 2. Create and save the user message
-    user_message = ChatMessage(
+    # 2. Save user message
+    user_msg = ChatMessage(
         session_id=session_id,
         sender="user",
         message=message
     )
-    db.add(user_message)
-    db.commit()
-    db.refresh(user_message)
+    db.add(user_msg)
+    db.commit()  # Commit user message first
+    logger.info(f"Saved user message to database (session: {session_id})")
+    
+    try:
+        # 3. Process message through agent
+        # Note: We need to use asyncio for async function
+        import asyncio
+        
+        # Get or create event loop
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        assistant_text = loop.run_until_complete(
+            process_message_with_agent(db, message, session_id)
+        )
+        
+        logger.info(f"Agent generated response (session: {session_id})")
+        
+    except Exception as e:
+        logger.error(f"Error getting response from agent: {e}", exc_info=True)
+        # Fallback response in case of error
+        assistant_text = "I'm sorry, I'm having trouble processing your request right now. Please try again later."
 
-    logger.info(f"Saved user message to session {session_id}")
-    return user_message, session_id
+    # 4. Save assistant response
+    assistant_msg = ChatMessage(
+        session_id=session_id,
+        sender="assistant",
+        message=assistant_text
+    )
+    db.add(assistant_msg)
+    db.commit()
+    db.refresh(assistant_msg)
+    
+    logger.info(f"Saved assistant response to database (session: {session_id})")
+
+    return assistant_msg, session_id
+
