@@ -2,8 +2,11 @@
 
 import json
 import logging
+from uuid import UUID
 
 from app.agents.state import AgentState
+from app.core.database_connection import SessionLocal
+from app.services.chat import save_user_message
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
@@ -18,7 +21,7 @@ def parafraseo(state: AgentState) -> AgentState:
 
     This node:
     1. Receives a validated user message (after guard_inicial validation)
-    2. Saves the user's message to the chat session in PostgreSQL (TODO - placeholder)
+    2. Saves the user's message to the chat session in PostgreSQL using save_user_message service
     3. Uses chat history (already retrieved by agent_host) as context
     4. Uses the last message to understand user's intentions and chat history as context
     5. Sends to LLM with instructions to return 3 differently phrased statements that encapsulate
@@ -26,10 +29,10 @@ def parafraseo(state: AgentState) -> AgentState:
 
     Args:
         state: Agent state containing validated user message, chat_messages (from agent_host), 
-               chat_session_id, and user_id
+               chat_session_id (optional - creates new session if not provided)
 
     Returns:
-        Updated state with paraphrased_text and paraphrased_statements set
+        Updated state with chat_session_id (if new), paraphrased_text and paraphrased_statements
     """
     updated_state = state.copy()
     
@@ -44,12 +47,40 @@ def parafraseo(state: AgentState) -> AgentState:
     last_user_message = messages[-1]
     user_message_content = last_user_message.content if hasattr(last_user_message, 'content') else str(last_user_message)
     
-    # TODO: Save message to PostgreSQL database according to chat session
-    # This should:
-    # 1. Call a service or endpoint to save the current user message to the chat session
-    # 2. Use chat_session_id from state
-    # 3. Handle errors appropriately (session not found, permission denied, etc.)
-    logger.info("Message save to DB not yet implemented - skipping")
+    # Save validated message to PostgreSQL database
+    chat_session_id = state.get("chat_session_id")
+    
+    try:
+        # Convert session_id to UUID if provided
+        session_uuid = UUID(chat_session_id) if chat_session_id and isinstance(chat_session_id, str) else chat_session_id
+        
+        db = SessionLocal()
+        try:
+            # Save the user message to the database
+            saved_message, resulting_session_id = save_user_message(
+                db=db,
+                message=user_message_content,
+                session_id=session_uuid
+            )
+            
+            # Update state with session_id (important for new sessions)
+            updated_state["chat_session_id"] = str(resulting_session_id)
+            
+            logger.info(f"Saved user message (ID: {saved_message.id}) to session {resulting_session_id}")
+            
+        finally:
+            db.close()
+            
+    except ValueError as e:
+        # Session not found or invalid
+        logger.error(f"Error saving message: {e}")
+        updated_state["error_message"] = f"Failed to save message: {str(e)}"
+        return updated_state
+    except Exception as e:
+        # Other database errors
+        logger.error(f"Unexpected error saving message: {e}", exc_info=True)
+        updated_state["error_message"] = f"Failed to save message: {str(e)}"
+        return updated_state
     
     # Get chat history from state (already retrieved by agent_host)
     chat_messages = state.get("chat_messages", [])
