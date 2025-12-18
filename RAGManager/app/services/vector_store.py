@@ -88,7 +88,6 @@ def _get_vector_store() -> PGVector:
 
 
 def store_chunks_with_embeddings(
-    document_id: int,
     filename: str,
     chunks: list[Document],
     batch_size: int = DEFAULT_BATCH_SIZE,
@@ -117,14 +116,13 @@ def store_chunks_with_embeddings(
         logger.warning("No chunks provided for storage")
         return 0
 
-    logger.info(f"Storing {len(chunks)} chunks for document_id={document_id}")
+    logger.info(f"Storing {len(chunks)} chunks")
 
     # Prepare documents with metadata for PGVector
     prepared_docs = []
     for idx, chunk in enumerate(chunks):
         # Create a new document with enriched metadata
         metadata = {
-            "document_id": document_id,
             "chunk_index": idx,
             "filename": filename,
             # Preserve any existing metadata from chunking
@@ -158,5 +156,5 @@ def store_chunks_with_embeddings(
             logger.error(f"Error storing batch {batch_num}: {e}")
             raise
 
-    logger.info(f"Successfully stored {total_stored} chunks for document_id={document_id}")
+    logger.info(f"Successfully stored {total_stored} chunks")
     return total_stored

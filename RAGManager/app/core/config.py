@@ -44,10 +44,7 @@ class Settings(BaseSettings):
     )
 
     # Guardrails Configuration
-    guardrailsai_key: str = Field(
-        default="",
-        description="Guardrails AI API key for validator installation"
-    )
+    guardrails_api_key: str
     guardrails_jailbreak_threshold: float = Field(
         default=0.9,
         ge=0.0,

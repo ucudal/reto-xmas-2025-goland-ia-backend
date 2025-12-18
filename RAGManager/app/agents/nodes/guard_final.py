@@ -1,28 +1,37 @@
 """Nodo Guard Final - Validates generated response for PII (risky information detection)."""
 
 import logging
-import re
+
+from guardrails import Guard
+from guardrails.hub import DetectPII, ToxicLanguage
 
 from app.agents.state import AgentState
 
 logger = logging.getLogger(__name__)
 
-# Pattern-based PII detection (fallback when Guardrails Hub validators aren't available)
-PII_PATTERNS = [
-    r'\b\d{3}-\d{2}-\d{4}\b',  # SSN format
-    r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b',  # Credit card format
-    r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',  # Email
-    r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # Phone number
-]
+# Initialize Guard with DetectPII and ToxicLanguage validators
+# Note: The validators must be installed via:
+#   guardrails hub install hub://guardrails/detect_pii
+#   guardrails hub install hub://guardrails/toxic_language
+_guard_final = Guard().use(
+    DetectPII(
+        pii_entities=settings.guardrails_pii_entities,
+        on_fail="noop",  # Don't raise exceptions, handle via state flags
+    )
+).use(
+    ToxicLanguage(
+        on_fail="noop",  # Don't raise exceptions, handle via state flags
+    )
+)
 
 
 def guard_final(state: AgentState) -> AgentState:
     """
-    Guard final node - Validates generated response for PII using Guardrails DetectPII.
+    Guard final node - Validates generated response for PII and toxic language using Guardrails.
 
     This node:
-    1. Validates the generated_response using Guardrails DetectPII validator
-    2. Sets is_risky flag if PII is detected
+    1. Validates the generated_response using Guardrails DetectPII and ToxicLanguage validators
+    2. Sets is_risky flag if PII or toxic language is detected
     3. Sets error_message if risky content is detected
 
     Args:
@@ -47,14 +56,14 @@ def guard_final(state: AgentState) -> AgentState:
         if not has_pii:
             updated_state["is_risky"] = False
             updated_state["error_message"] = None
-            logger.debug("Generated response passed PII detection (pattern-based)")
+            logger.debug("Generated response passed PII and toxic language detection")
         else:
-            # PII detected
+            # PII or toxic language detected
             updated_state["is_risky"] = True
             updated_state["error_message"] = (
-                "PII detected in generated response. The information requested is classified or not free to know."
+                "Risky content detected in generated response. The information requested is classified or not free to know."
             )
-            logger.warning("PII detected in generated response. Response content not logged for security.")
+            logger.warning("Risky content detected in generated response. Response content not logged for security.")
 
     except Exception as e:
         # If validation fails due to error, log it but don't block the request
