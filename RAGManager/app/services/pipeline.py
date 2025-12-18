@@ -1,33 +1,31 @@
 import logging
 
-from langchain_core.documents import Document
-
 from app.core.config import settings
+from app.core.database_connection import SessionLocal
+from app.models.document import Document
 from app.services.chunking_service import document_to_chunks
-from app.services.embedding_service import chunks_to_embeddings
 from app.services.pdf_processor import pdf_to_document
+from app.services.vector_store import store_chunks_with_embeddings
 
 logger = logging.getLogger(__name__)
 
-
-def process_pdf_pipeline(object_name: str) -> int:
+def process_pdf_pipeline(object_name: str):
     """
     Orchestrates the PDF processing pipeline.
 
     This function coordinates the three-stage pipeline:
     1. PDF to LangChain Document
     2. Document to Chunks
-    3. Chunks to Embeddings
-    4. Store in database (to be implemented)
+    3. Embed and Store in database using PGVector
 
     Args:
         object_name: Path/name of the PDF object in the MinIO bucket
 
     Returns:
-        int: document_id of the created document (mock value for now)
+        int: document_id of the created document
 
     Raises:
-        NotImplementedError: If any of the pipeline stages are not yet implemented
+        Exception: If any of the pipeline stages fail
     """
     logger.info(f"Starting PDF processing pipeline for object: {object_name}")
 
@@ -44,27 +42,21 @@ def process_pdf_pipeline(object_name: str) -> int:
         chunks = document_to_chunks(document, settings.chunk_size, settings.chunk_overlap)
         logger.info(f"Stage 2 completed successfully. Created {len(chunks)} chunks")
 
-        # Stage 3: Chunks to Embeddings
-        logger.info("Stage 3: Generating embeddings for chunks")
-        embeddings = chunks_to_embeddings(chunks)
-        logger.info(f"Stage 3 completed successfully. Generated {len(embeddings)} embeddings")
+        # Stage 3: Embed and Store in database
+        # First, create the document record to get the document_id
+        logger.info("Stage 3: Embedding and storing chunks in database")
 
-        # Stage 4: Store in database (placeholder - not implemented yet)
-        logger.info("Stage 4: Storing chunks and embeddings in database")
-        # TODO: Implement database storage
-        # This will:
-        # 1. Create a Document record in the documents table
-        # 2. Create DocumentChunk records with embeddings in the document_chunks table
-        # 3. Return the document_id
-        raise NotImplementedError("Database storage will be implemented later")
+        # Extract filename from object_name (e.g., "folder/file.pdf" -> "file.pdf")
+        filename = object_name.split("/")[-1] if "/" in object_name else object_name
 
-    except NotImplementedError as e:
-        logger.warning(f"Pipeline stage not implemented: {e}")
-        # Return a mock document_id for now
-        # In production, this should be replaced with actual database storage
-        mock_document_id = 1
-        logger.info(f"Pipeline completed with mock document_id: {mock_document_id}")
-        return mock_document_id
+        # Store chunks with embeddings using PGVector
+        # This generates embeddings via OpenAI and stores in the vector database
+        chunks_stored = store_chunks_with_embeddings(
+            filename=filename,
+            chunks=chunks,
+        )
+        logger.info(f"Stage 3 completed successfully. Stored {chunks_stored} chunks with embeddings")
+
     except Exception as e:
         logger.error(f"Error in PDF processing pipeline: {e}")
         raise
