@@ -24,7 +24,7 @@ def fallback_final(state: AgentState) -> AgentState:
     updated_state = state.copy()
 
     # Set error message for risky content
-    updated_state["error_message"] = "The information requested is classified or not free to know."
+    updated_state["error_message"] = "La información solicitada es confidencial o no es de libre acceso."
     logger.warning("Risky content detected. Stopping processing. Response content not logged for security.")
 
     return updated_state

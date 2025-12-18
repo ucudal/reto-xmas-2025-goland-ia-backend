@@ -65,7 +65,7 @@ def guard_final(state: AgentState) -> AgentState:
             # PII or toxic language detected
             updated_state["is_risky"] = True
             updated_state["error_message"] = (
-                "Risky content detected in generated response. The information requested is classified or not free to know."
+               "Contenido riesgoso detectado en la respuesta generada. La información solicitada está clasificada o no es de libre acceso."
             )
             logger.warning("Risky content detected in generated response. Response content not logged for security.")
 
