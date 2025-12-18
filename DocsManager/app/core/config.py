@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator, model_validator, Field
+from pydantic import field_validator, model_validator
 from typing import Optional
 from urllib.parse import quote_plus
 import logging
@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     minio_access_key: str
     minio_secret_key: str
     minio_bucket: str = "documents"
+    minio_folder: str = "rag-docs"
     minio_use_ssl: bool = True
 
     # Database Configuration (for SQLAlchemy)

@@ -2,9 +2,8 @@
 
 from fastapi import APIRouter
 
-from app.api.routes import chat, documents
+from app.api.routes import documents
 
 router = APIRouter(prefix="/api/v1")
 
 router.include_router(documents.router)
-router.include_router(chat.router)

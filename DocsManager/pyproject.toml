@@ -3,26 +3,21 @@ name = "goland-ia"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12,<3.14"
-
+requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.124.2",
-    "sqlalchemy>=2.0.35",
-    "asyncpg>=0.29.0",
-    "psycopg2-binary>=2.9.9",
-    "langgraph>=1.0.4",
+    "ipython>=9.8.0",
     "typing-extensions>=4.15.0",
     "uvicorn>=0.38.0",
     "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
     "pgvector>=0.3.0",
     "pydantic-settings>=2.0.0",
     "pika>=1.3.0",
     "minio>=7.2.0",
     "python-multipart>=0.0.6",
+    "ag-ui-protocol>=0.1.10",
 ]
-
-[project.scripts]
-start = "uvicorn main:app --reload --host 0.0.0.0 --port 8000"
 
 [project.optional-dependencies]
 dev = [
@@ -31,7 +26,7 @@ dev = [
 
 [tool.ruff]
 # Enable pyproject.toml support
-target-version = "py313"
+target-version = "py314"
 line-length = 120
 
 # Enable auto-fix

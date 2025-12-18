@@ -9,14 +9,10 @@ on:
 env:
   REGISTRY: crretoxmas2024.azurecr.io
   NAMESPACE: reto-xmas-2025-goland-ia-backend
-  ROLLOUT_TIMEOUT: 60s
-  READY_CHECK_RETRIES: 20
-  READY_CHECK_SLEEP: 15
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -29,7 +25,7 @@ jobs:
             path: ./RAGManager
             image: reto-xmas-2025-goland-ia-backend-rag-manager
             deployment: rag-manager
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -55,7 +51,6 @@ jobs:
           ${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }}
         cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ matrix.service.image }}:buildcache
         cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ matrix.service.image }}:buildcache,mode=max
-        provenance: false
 
     - name: Set up kubectl
       uses: azure/setup-kubectl@v3
@@ -68,78 +63,28 @@ jobs:
         echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
         chmod 600 $HOME/.kube/config
 
-    - name: Update deployment image
+    - name: Restart deployment
       run: |
-        kubectl set image deployment/${{ matrix.service.deployment }} \
-          api=${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }} \
-          -n ${{ env.NAMESPACE }}
+        kubectl rollout restart deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
+        kubectl rollout status deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} --timeout=5m
 
-    - name: Wait for deployment to be ready (robust)
+    - name: Verify deployment
       run: |
-        set -e
-
-        echo "Checking rollout status (non-blocking)..."
-        kubectl rollout status deployment/${{ matrix.service.deployment }} \
-          -n ${{ env.NAMESPACE }} \
-          --timeout=${{ env.ROLLOUT_TIMEOUT }} || true
-
-        echo "Waiting for available replicas..."
-
-        for i in $(seq 1 $READY_CHECK_RETRIES); do
-          DESIRED=$(kubectl get deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}')
-          AVAILABLE=$(kubectl get deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }} -o jsonpath='{.status.availableReplicas}')
-
-          echo "Attempt $i: $AVAILABLE / $DESIRED replicas available"
-
-          if [ "$AVAILABLE" = "$DESIRED" ]; then
-            echo "Deployment is ready"
-            exit 0
-          fi
-
-          sleep $READY_CHECK_SLEEP
-        done
-
-        echo "Deployment did not become ready in time"
-        kubectl describe deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
-        exit 1
-
-    - name: Verify pods
-      if: success()
-      run: |
-        kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }} -o wide
-
-    - name: Get logs on failure
-      if: failure()
-      run: |
-        echo "=== Deployment ==="
-        kubectl describe deployment/${{ matrix.service.deployment }} -n ${{ env.NAMESPACE }}
-
-        echo "=== Pods ==="
-        kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }} -o wide
-
-        echo "=== Pod Logs ==="
-        kubectl logs -n ${{ env.NAMESPACE }} \
-          -l app=${{ matrix.service.deployment }} \
-          --tail=100 \
-          --all-containers=true \
-          --prefix=true || true
+        echo "✅ Deployment successful for ${{ matrix.service.name }}"
+        kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }}
 
     - name: Deployment Summary
       if: always()
       run: |
-        STATUS="${{ job.status }}"
-
-        echo "### Deployment - ${{ matrix.service.name }}" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Image | \`${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Status | $STATUS |" >> $GITHUB_STEP_SUMMARY
+        echo "**Service:** ${{ matrix.service.name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Image:** ${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-
         echo "#### Pods:" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-        kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }} >> $GITHUB_STEP_SUMMARY || true
+        kubectl get pods -n ${{ env.NAMESPACE }} -l app=${{ matrix.service.deployment }} >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
 
   notify-success:
@@ -150,34 +95,8 @@ jobs:
     steps:
     - name: Success Summary
       run: |
-        echo "### All Services Deployed" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Deployment Successful!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Live URLs:**" >> $GITHUB_STEP_SUMMARY
-        echo "- [DocsManager](https://goland-ia-backend-docs-manager.reto-ucu.net/docs)" >> $GITHUB_STEP_SUMMARY
-        echo "- [RAGManager](https://goland-ia-backend-rag-manager.reto-ucu.net/docs)" >> $GITHUB_STEP_SUMMARY
-
-    - name: Notificar a Discord (deploy exitoso)
-      run: |
-        curl -H "Content-Type: application/json" \
-          -X POST \
-          -d "{\"content\": \"✅ **Deploy exitoso**\\n\\n**Servicio:** \\\\`${{ matrix.service.name }}\\\\`\\n**Imagen:** \\\\`${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }}\\\\`\\n**Namespace:** \\\\`${{ env.NAMESPACE }}\\\\`\\n**Autor:** ${{ github.actor }}\\n**Commit:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})\\n\\n[Ver ejecución en GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\\n\\n:rocket: ¡Todo salió bien!\"}" \
-          https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk
-
-  notify-failure:
-    name: Deployment Failed
-    runs-on: ubuntu-latest
-    needs: [build-and-deploy]
-    if: failure()
-    steps:
-    - name: Failure Summary
-      run: |
-        echo "### Deployment Failed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Please check deployment logs above." >> $GITHUB_STEP_SUMMARY
-
-    - name: Notificar a Discord (deploy fallido)
-      run: |
-        curl -H "Content-Type: application/json" \
-          -X POST \
-          -d "{\"content\": \"❌ **Falló el deploy**\\n\\n**Servicio:** \\\\`${{ matrix.service.name }}\\\\`\\n**Imagen:** \\\\`${{ env.REGISTRY }}/${{ matrix.service.image }}:${{ github.sha }}\\\\`\\n**Namespace:** \\\\`${{ env.NAMESPACE }}\\\\`\\n**Autor:** ${{ github.actor }}\\n**Commit:** [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})\\n\\n[Ver ejecución en GitHub Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\\n\\n:warning: Revisa los logs para más detalles.\"}" \
-          https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk
+        echo "All services deployed successfully:" >> $GITHUB_STEP_SUMMARY
+        echo "- 🌐 DocsManager: https://goland-ia-backend-docs-manager.reto-ucu.net" >> $GITHUB_STEP_SUMMARY
+        echo "- 🌐 RAGManager: https://goland-ia-backend-rag-manager.reto-ucu.net" >> $GITHUB_STEP_SUMMARY

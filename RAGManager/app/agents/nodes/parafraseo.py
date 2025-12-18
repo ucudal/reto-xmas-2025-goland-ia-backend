@@ -1,4 +1,4 @@
-"""Nodo 4: Parafraseo - Saves message and paraphrases user input using chat history."""
+"""Nodo 4: Parafraseo - Saves message, retrieves chat history, and paraphrases user input."""
 
 import json
 import logging
@@ -14,22 +14,21 @@ llm = ChatOpenAI(model="gpt-5-nano")
 
 def parafraseo(state: AgentState) -> AgentState:
     """
-    Parafraseo node - Saves message to DB and paraphrases user input using chat history.
+    Parafraseo node - Saves message to DB, retrieves chat history, and paraphrases user input.
 
     This node:
     1. Receives a validated user message (after guard_inicial validation)
-    2. Saves the user's message to the chat session in PostgreSQL (TODO - placeholder)
-    3. Uses chat history (already retrieved by agent_host) as context
-    4. Uses the last message to understand user's intentions and chat history as context
+    2. Saves the user's message to the chat session in PostgreSQL (endpoint 1 - placeholder)
+    3. Retrieves the last 10 messages of the conversation (endpoint 2 - placeholder)
+    4. Uses the last message to understand user's intentions and the remaining 9 (older) messages as context
     5. Sends to LLM with instructions to return 3 differently phrased statements that encapsulate
        the user's intentions according to the last message and chat history
 
     Args:
-        state: Agent state containing validated user message, chat_messages (from agent_host), 
-               chat_session_id, and user_id
+        state: Agent state containing validated user message, chat_session_id, and user_id
 
     Returns:
-        Updated state with paraphrased_text and paraphrased_statements set
+        Updated state with chat_messages, paraphrased_text, and paraphrased_statements set
     """
     updated_state = state.copy()
     
@@ -44,16 +43,31 @@ def parafraseo(state: AgentState) -> AgentState:
     last_user_message = messages[-1]
     user_message_content = last_user_message.content if hasattr(last_user_message, 'content') else str(last_user_message)
     
-    # TODO: Save message to PostgreSQL database according to chat session
+    # TODO: Endpoint 1 - Save message to PostgreSQL database according to chat session
     # This should:
-    # 1. Call a service or endpoint to save the current user message to the chat session
-    # 2. Use chat_session_id from state
-    # 3. Handle errors appropriately (session not found, permission denied, etc.)
-    logger.info("Message save to DB not yet implemented - skipping")
+    # 1. Call an endpoint (not yet developed) that:
+    #    - Saves the current user message to the chat session in PostgreSQL
+    #    - Uses chat_session_id and user_id from state
+    #    - Returns success/failure status
+    # 2. Handle errors appropriately (session not found, permission denied, etc.)
+    logger.info("Endpoint 1 (save message to DB) not yet implemented - skipping")
     
-    # Get chat history from state (already retrieved by agent_host)
-    chat_messages = state.get("chat_messages", [])
-    logger.info(f"Using {len(chat_messages)} chat messages from state (retrieved by agent_host)")
+    # TODO: Endpoint 2 - Retrieve last 10 messages of the conversation
+    # This should:
+    # 1. Call an endpoint (not yet developed) that:
+    #    - Retrieves the last 10 messages for the chat session
+    #    - Returns a list of message dictionaries with structure: [{"sender": "user|assistant|system", "message": "...", "created_at": "..."}, ...]
+    #    - Messages should be ordered from oldest to newest (or newest to oldest, depending on API design)
+    # 2. Update state with chat_messages from the endpoint response
+    # 3. Handle errors appropriately (session not found, permission denied, etc.)
+    
+    # Placeholder: For now, we'll simulate chat history with just the current message
+    # Once the endpoint is implemented, replace this with the actual endpoint call
+    chat_messages = [
+        {"sender": "user", "message": user_message_content, "created_at": "2025-01-01T00:00:00"}
+    ]
+    updated_state["chat_messages"] = chat_messages
+    logger.warning("Endpoint 2 (retrieve chat history) not yet implemented - using current message only")
     
     # Process chat history: last message (intentions) + 9 older messages (context)
     # The last message is the most recent one (for understanding intentions)

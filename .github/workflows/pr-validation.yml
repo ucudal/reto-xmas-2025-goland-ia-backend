@@ -2,7 +2,6 @@ name: PR Validation
 
 on:
   pull_request:
-    types: [opened]
     branches:
       - main
 
@@ -67,13 +66,6 @@ jobs:
         severity: 'CRITICAL,HIGH'
         exit-code: '0'
 
-    - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@v2
-      with:
-        host: https://sonarqube.reto-ucu.net/
-        login: ${{ secrets.SONAR_TOKEN }}
-        projectKey: reto-xmas-2025-goland-ia-backend
-
   pr-summary:
     name: PR Summary
     runs-on: ubuntu-latest
@@ -105,15 +97,3 @@ jobs:
             repo: context.repo.repo,
             body: message
           });
-
-  discord-pr-notify:
-    name: Notificar PR en Discord
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Notificar a Discord (nuevo PR)
-        run: |
-          curl -H "Content-Type: application/json" \
-            -X POST \
-            -d "{\"content\": \"🔔 Nuevo Pull Request: [${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }}) por ${{ github.event.pull_request.user.login }}\"}" \
-            https://discord.com/api/webhooks/1449147972330852463/sMs3QYOvQ6oiaPHR4PlBluwNrhWSsVmfm3_Miz6UAFrPxj1SsbqNnHXc5eK9h8ZSaumk

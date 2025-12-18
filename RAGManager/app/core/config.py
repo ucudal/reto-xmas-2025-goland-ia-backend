@@ -13,20 +13,13 @@ class Settings(BaseSettings):
     minio_access_key: str
     minio_secret_key: str
     minio_bucket: str
-    minio_use_ssl: bool = True
+    minio_secure: bool = True
 
     # OpenAI Configuration
     openai_api_key: str
 
     # Database Configuration
     database_url: str
-
-    # RabbitMQ Configuration
-    rabbitmq_user: str
-    rabbitmq_password: str
-    rabbitmq_host: str = "localhost"
-    rabbitmq_port: int = 5672
-    rabbitmq_queue_name: str = "document.process"
 
     # Chunking Configuration
     chunk_size: int = 1000
@@ -73,15 +66,6 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
-
-    @property
-    def rabbitmq_url(self) -> str:
-        """Returns the RabbitMQ connection URL with URL-encoded credentials."""
-        from urllib.parse import quote_plus
-
-        encoded_user = quote_plus(self.rabbitmq_user)
-        encoded_password = quote_plus(self.rabbitmq_password)
-        return f"amqp://{encoded_user}:{encoded_password}@{self.rabbitmq_host}:{self.rabbitmq_port}/"
 
 
 settings = Settings()

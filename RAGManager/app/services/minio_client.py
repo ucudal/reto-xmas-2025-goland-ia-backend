@@ -1,7 +1,6 @@
 # MinIO client configuration and utilities.
 
 import logging
-from urllib.parse import urlparse
 
 import certifi
 import urllib3
@@ -15,19 +14,6 @@ logger = logging.getLogger(__name__)
 
 def get_minio_client() -> Minio:
     """Create a MinIO client with proper timeout and retry configuration."""
-    # Parse endpoint to extract host and port (urlparse strips the scheme automatically)
-    parsed = urlparse(settings.minio_endpoint)
-    endpoint = parsed.netloc or parsed.path
-    
-    # Validate that the endpoint is not empty
-    if not endpoint or endpoint.strip() == "":
-        error_msg = (
-            f"Invalid MinIO endpoint configuration: '{settings.minio_endpoint}'. "
-            "Endpoint must be a valid host or host:port (e.g., 'localhost:9000')"
-        )
-        logger.error(error_msg)
-        raise ValueError(error_msg)
-    
     # Configure timeout: 10s connect, 30s read
     timeout = UrllibTimeout(connect=10, read=30)
 
@@ -48,10 +34,10 @@ def get_minio_client() -> Minio:
     )
 
     return Minio(
-        endpoint=endpoint,
+        endpoint=settings.minio_endpoint,
         access_key=settings.minio_access_key,
         secret_key=settings.minio_secret_key,
-        secure=settings.minio_use_ssl,
+        secure=settings.minio_secure,
         http_client=http_client,
     )
 
