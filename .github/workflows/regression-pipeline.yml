@@ -31,7 +31,8 @@ jobs:
       - name: Checkout QA repo
         uses: actions/checkout@v3
         with:
-          repository: ${{ github.repository_owner }}/reto-xmas-2025-goland-ia-qa
+          repository: ucudal/reto-xmas-2025-goland-ia-qa
+          token: ${{ secrets.GH_TOKEN }}
           path: qa
 
       - name: Set up Python
