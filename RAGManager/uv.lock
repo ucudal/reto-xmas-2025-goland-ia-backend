@@ -545,7 +545,7 @@ wheels = [
 
 [[package]]
 name = "guardrails-ai"
-version = "0.7.1"
+version = "0.7.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -576,9 +576,9 @@ dependencies = [
     { name = "typer" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/37/dd/842c7f300a2090ddeadc481c6d8002b90dc4b86802c3dc8545505ddea432/guardrails_ai-0.7.1.tar.gz", hash = "sha256:c5879b1d6062e68cb48dc38b8e725b08243b14c696dc2fef0be221095a54e98d", size = 170419, upload-time = "2025-12-10T18:48:22.153Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/a3/a0789e51cee89c1d9eb52460e1000108904c733ab9fa4c1447787a0a5e5c/guardrails_ai-0.7.2.tar.gz", hash = "sha256:49b7dd6dffc26959cb8a44a6ca8ec165c4b3da188dd8890664c0820bbf311838", size = 170503, upload-time = "2025-12-17T18:44:45.64Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/a2/1dc51a3b62314b22f8fd0e158536268dfaee49f1b4c420c335ccfaa9cc5b/guardrails_ai-0.7.1-py3-none-any.whl", hash = "sha256:3276309850b0808c34ecb12521bfc9afd8f15a65aa995bd5ed76fa76b6a291e6", size = 236013, upload-time = "2025-12-10T18:48:20.359Z" },
+    { url = "https://files.pythonhosted.org/packages/93/b5/de811fc009df3cc314428fd2099db71d893f8596c0401f27259ca81abe64/guardrails_ai-0.7.2-py3-none-any.whl", hash = "sha256:7559baf6218fbca273b3d41a56ca97facbcbce61d524dc510bc3829237710029", size = 236103, upload-time = "2025-12-17T18:44:43.838Z" },
 ]
 
 [[package]]

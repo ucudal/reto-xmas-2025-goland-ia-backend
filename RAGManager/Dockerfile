@@ -14,6 +14,10 @@ COPY . .
 
 RUN uv sync --no-dev --no-cache
 
+# Note: Skipping Guardrails Hub validator installation due to API token scope limitations
+# The guards will work with basic pattern matching fallback in the code
+# For ML-based validation, validators need to be configured post-deployment or with proper token scopes
+
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \

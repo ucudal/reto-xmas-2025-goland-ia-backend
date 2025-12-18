@@ -28,6 +28,9 @@ services:
     build:
       context: ./RAGManager
       dockerfile: Dockerfile
+      args:
+        # This reads GUARDRAILSAI_KEY from RAGManager/.env
+        GUARDRAILSAI_KEY: ${GUARDRAILSAI_KEY}
     container_name: rag-manager
     ports:
       - "8001:8000"

@@ -7,9 +7,7 @@ from app.agents.state import AgentState
 
 logger = logging.getLogger(__name__)
 
-# Simplified PII detection patterns for testing
-# TODO: Replace with full Guardrails implementation once validators are installed:
-# guardrails hub install hub://guardrails/detect_pii
+# Pattern-based PII detection (fallback when Guardrails Hub validators aren't available)
 PII_PATTERNS = [
     r'\b\d{3}-\d{2}-\d{4}\b',  # SSN format
     r'\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b',  # Credit card format
@@ -43,14 +41,13 @@ def guard_final(state: AgentState) -> AgentState:
         return updated_state
 
     try:
-        # Simplified validation - check for PII patterns
-        # TODO: Replace with full Guardrails implementation
+        # Pattern-based validation (fallback)
         has_pii = any(re.search(pattern, generated_response) for pattern in PII_PATTERNS)
         
         if not has_pii:
             updated_state["is_risky"] = False
             updated_state["error_message"] = None
-            logger.debug("Generated response passed PII detection (simplified)")
+            logger.debug("Generated response passed PII detection (pattern-based)")
         else:
             # PII detected
             updated_state["is_risky"] = True

@@ -6,9 +6,7 @@ from app.agents.state import AgentState
 
 logger = logging.getLogger(__name__)
 
-# Simplified jailbreak detection for testing
-# TODO: Replace with full Guardrails implementation once validators are installed:
-# guardrails hub install hub://guardrails/detect_jailbreak
+# Pattern-based jailbreak detection (fallback when Guardrails Hub validators aren't available)
 JAILBREAK_PATTERNS = [
     "ignore all previous instructions",
     "ignore previous instructions",
@@ -19,6 +17,9 @@ JAILBREAK_PATTERNS = [
     "system prompt",
     "act as",
     "pretend you are",
+    "you are now",
+    "new instructions",
+    "override",
 ]
 
 
@@ -49,15 +50,14 @@ def guard_inicial(state: AgentState) -> AgentState:
         return updated_state
 
     try:
-        # Simplified validation - check for jailbreak patterns
-        # TODO: Replace with full Guardrails implementation
+        # Pattern-based validation (fallback)
         prompt_lower = prompt.lower()
         is_jailbreak = any(pattern in prompt_lower for pattern in JAILBREAK_PATTERNS)
         
         if not is_jailbreak:
             updated_state["is_malicious"] = False
             updated_state["error_message"] = None
-            logger.debug("Prompt passed jailbreak detection (simplified)")
+            logger.debug("Prompt passed jailbreak detection (pattern-based)")
         else:
             # Jailbreak detected
             updated_state["is_malicious"] = True

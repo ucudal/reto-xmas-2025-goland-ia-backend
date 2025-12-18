@@ -44,15 +44,15 @@ class Settings(BaseSettings):
     )
 
     # Guardrails Configuration
+    guardrailsai_key: str = Field(
+        default="",
+        description="Guardrails AI API key for validator installation"
+    )
     guardrails_jailbreak_threshold: float = Field(
         default=0.9,
         ge=0.0,
         le=1.0,
-        description="DetectJailbreak threshold; verify semantics in guardrails-ai (higher vs lower sensitivity).",
-    )
-    guardrails_device: Literal["cpu", "cuda", "mps"] = Field(
-        default="cpu",
-        description="Device for model inference.",
+        description="DetectJailbreak threshold (0-1, higher = stricter)"
     )
     guardrails_pii_entities: list[str] = Field(
         default=[
@@ -65,8 +65,9 @@ class Settings(BaseSettings):
             "IBAN_CODE",
             "IP_ADDRESS",
         ],
-        description="List of PII entity types to detect using DetectPII validator.",
+        description="PII entity types to detect"
     )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
