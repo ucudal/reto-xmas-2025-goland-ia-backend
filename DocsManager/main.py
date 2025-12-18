@@ -1,5 +1,6 @@
 import logging
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, base
 from app.api.routes.chatMessage import router as chat_router
@@ -12,6 +13,19 @@ logging.basicConfig(
 )
 
 app = FastAPI(title="Docs Manager API", version="0.1.0")
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite default port
+        "http://localhost:3000",  # React default port
+        "http://localhost:5174",  # Alternative Vite port
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include routers
 app.include_router(base.router)

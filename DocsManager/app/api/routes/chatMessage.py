@@ -25,5 +25,11 @@ async def post_user_message(
     This endpoint accepts RunAgentInput and returns a stream of AG-UI events.
     """
     return StreamingResponse(
-        process_agent_message(db, payload)
+        process_agent_message(db, payload),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable buffering in nginx if present
+        }
     )

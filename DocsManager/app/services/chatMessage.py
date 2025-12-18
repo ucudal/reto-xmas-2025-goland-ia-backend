@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import AsyncIterator
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from app.models.chat_message import ChatMessage
 from app.schemas.enums.sender_type import SenderType
@@ -37,9 +37,29 @@ def create_user_message(
         db.flush()  # genera el UUID sin commit
         session_id = session.id
     else:
-        session = db.get(ChatSession, session_id)
-        if not session:
-            raise ValueError("Chat session not found")
+        # Convertir session_id a UUID si es string
+        try:
+            if isinstance(session_id, str):
+                session_uuid = UUID(session_id)
+            else:
+                session_uuid = session_id
+            
+            # Intentar obtener la sesión existente
+            session = db.get(ChatSession, session_uuid)
+            if not session:
+                # Si el thread_id no existe, crear una nueva sesión
+                # Nota: No podemos forzar el ID, PostgreSQL lo generará automáticamente
+                # En su lugar, creamos una nueva sesión y el frontend deberá usar el nuevo ID
+                session = ChatSession()
+                db.add(session)
+                db.flush()
+                session_id = session.id
+        except (ValueError, TypeError):
+            # Si el session_id no es un UUID válido, crear una nueva sesión
+            session = ChatSession()
+            db.add(session)
+            db.flush()
+            session_id = session.id
 
     # 2. Guardar mensaje del usuario
     user_msg = ChatMessage(
@@ -115,10 +135,19 @@ async def process_agent_message(
         message_id = f"msg_{payload.run_id}"
         
         # Emit TEXT_MESSAGE_START event
-        text_start = TextMessageStartEvent(
-            run_id=payload.run_id,
-            message_id=message_id
-        )
+        # Note: role parameter may not be supported, using only required fields
+        try:
+            text_start = TextMessageStartEvent(
+                run_id=payload.run_id,
+                message_id=message_id,
+                role="assistant"
+            )
+        except TypeError:
+            # If role is not supported, create without it
+            text_start = TextMessageStartEvent(
+                run_id=payload.run_id,
+                message_id=message_id
+            )
         yield encoder.encode(text_start)
         
         # Emit TEXT_MESSAGE_CONTENT event with the assistant's response
@@ -137,25 +166,49 @@ async def process_agent_message(
         yield encoder.encode(text_end)
         
         # Emit MESSAGES_SNAPSHOT event with the full conversation
-        messages_snapshot = MessagesSnapshotEvent(
-            run_id=payload.run_id,
-            messages=[
-                *payload.messages,  # Include previous messages
-                AssistantMessage(
-                    id=message_id,
-                    content=[TextInputContent(text=assistant_msg.message)]
-                )
-            ]
-        )
-        yield encoder.encode(messages_snapshot)
+        # Note: AssistantMessage content should be a string, not a list
+        try:
+            messages_snapshot = MessagesSnapshotEvent(
+                run_id=payload.run_id,
+                messages=[
+                    *payload.messages,  # Include previous messages
+                    AssistantMessage(
+                        id=message_id,
+                        content=assistant_msg.message  # String, not list
+                    )
+                ]
+            )
+            yield encoder.encode(messages_snapshot)
+        except Exception as e:
+            # If MESSAGES_SNAPSHOT fails, log but continue to RUN_FINISHED
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to create MESSAGES_SNAPSHOT: {e}")
+            # Continue to RUN_FINISHED anyway
         
         # Emit RUN_FINISHED event
-        run_finished = RunFinishedEvent(
-            run_id=payload.run_id
-        )
+        # Note: thread_id parameter may not be supported, using only required fields
+        try:
+            run_finished = RunFinishedEvent(
+                run_id=payload.run_id,
+                thread_id=payload.thread_id
+            )
+        except TypeError:
+            # If thread_id is not supported, create without it
+            run_finished = RunFinishedEvent(
+                run_id=payload.run_id
+            )
         yield encoder.encode(run_finished)
         
+        # Ensure stream is properly closed by yielding empty string at the end
+        # This helps ensure all data is flushed
+        yield ""
+        
     except Exception as e:
-        # In case of error, we should emit a RUN_ERROR event
-        # For now, we'll just re-raise the exception
+        # In case of error, emit error information and close stream properly
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error processing agent message: {e}", exc_info=True)
+        # Try to emit an error event if possible, otherwise just close
+        # The stream will be closed automatically when the generator exits
         raise
