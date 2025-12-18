@@ -3,19 +3,25 @@
 import logging
 
 from guardrails import Guard
-from guardrails.hub import DetectJailbreak
+from guardrails.hub import DetectJailbreak, ToxicLanguage
 
 from app.agents.state import AgentState
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Initialize Guard with DetectJailbreak validator
-# Note: The validator must be installed via: guardrails hub install hub://guardrails/detect_jailbreak
+# Initialize Guard with DetectJailbreak and ToxicLanguage validators
+# Note: The validators must be installed via:
+#   guardrails hub install hub://guardrails/detect_jailbreak
+#   guardrails hub install hub://guardrails/toxic_language
 _guard_inicial = Guard().use(
     DetectJailbreak(
         threshold=settings.guardrails_jailbreak_threshold,
         device=settings.guardrails_device,
+        on_fail="noop",  # Don't raise exceptions, handle via state flags
+    )
+).use(
+    ToxicLanguage(
         on_fail="noop",  # Don't raise exceptions, handle via state flags
     )
 )
@@ -23,11 +29,11 @@ _guard_inicial = Guard().use(
 
 def guard_inicial(state: AgentState) -> AgentState:
     """
-    Guard inicial node - Validates user input for jailbreak attempts using Guardrails DetectJailbreak.
+    Guard inicial node - Validates user input for jailbreak attempts and toxic language using Guardrails.
 
     This node:
-    1. Validates the prompt using Guardrails DetectJailbreak validator
-    2. Sets is_malicious flag if jailbreak attempt is detected
+    1. Validates the prompt using Guardrails DetectJailbreak and ToxicLanguage validators
+    2. Sets is_malicious flag if jailbreak attempt or toxic language is detected
     3. Sets error_message if malicious content is detected
 
     Args:
@@ -57,14 +63,14 @@ def guard_inicial(state: AgentState) -> AgentState:
         if validation_result.validation_passed:
             updated_state["is_malicious"] = False
             updated_state["error_message"] = None
-            logger.debug("Prompt passed jailbreak detection")
+            logger.debug("Prompt passed jailbreak and toxic language detection")
         else:
-            # Jailbreak detected
+            # Jailbreak or toxic language detected
             updated_state["is_malicious"] = True
             updated_state["error_message"] = (
-                "Jailbreak attempt detected. Your request contains content that violates security policies."
+                "Malicious content detected. Your request contains content that violates security policies."
             )
-            logger.warning("Jailbreak attempt detected. Prompt content not logged for security.")
+            logger.warning("Malicious content detected. Prompt content not logged for security.")
 
     except Exception as e:
         # If validation fails due to error, log it but don't block the request
