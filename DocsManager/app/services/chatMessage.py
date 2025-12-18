@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import AsyncIterator
+from uuid import uuid4
 
 from app.models.chat_message import ChatMessage
 from app.schemas.enums.sender_type import SenderType
@@ -13,7 +14,9 @@ from ag_ui.core import (
     RunFinishedEvent,
     MessagesSnapshotEvent,
     AssistantMessage,
-    TextInputContent,
+    TextInputContent
+)
+from ag_ui.encoder import (
     EventEncoder
 )
 
@@ -28,7 +31,7 @@ def create_user_message(
     session_id=None
 ):
     # 1. Si no hay session_id → crear sesión nueva
-    if session_id is None:
+    if not session_id:
         session = ChatSession()
         db.add(session)
         db.flush()  # genera el UUID sin commit
@@ -90,6 +93,9 @@ async def process_agent_message(
         
         # Use thread_id as session_id (AG-UI uses thread_id for conversation tracking)
         session_id = payload.thread_id if hasattr(payload, 'thread_id') else None
+
+        if not payload.run_id:
+            payload.run_id = str(uuid4())
         
         # Emit RUN_STARTED event
         run_started = RunStartedEvent(
@@ -119,7 +125,7 @@ async def process_agent_message(
         text_content = TextMessageContentEvent(
             run_id=payload.run_id,
             message_id=message_id,
-            content=assistant_msg.message
+            delta=assistant_msg.message
         )
         yield encoder.encode(text_content)
         
