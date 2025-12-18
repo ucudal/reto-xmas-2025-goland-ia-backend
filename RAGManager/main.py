@@ -1,9 +1,12 @@
 import logging
+import threading
+
 from fastapi import FastAPI
 
 from app.api.routes import router as api_router
 from app.api.routes.base import router as base_router
 from app.core.database_connection import init_db
+from app.workers.pdf_processor_consumer import start_consumer
 
 # Configure logging
 logging.basicConfig(
@@ -21,10 +24,28 @@ app.include_router(api_router)
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup."""
+    """Initialize database and start RabbitMQ consumer on startup."""
     try:
         init_db()
         logging.info("Database initialized successfully")
+        
+        # Start RabbitMQ consumer in a separate daemon thread
+        consumer_thread = threading.Thread(target=start_consumer, daemon=True)
+        consumer_thread.start()
+        logging.info("RabbitMQ consumer started successfully")
+        
     except Exception as e:
-        logging.error(f"Failed to initialize database: {e}")
+        logging.error(f"Failed to initialize: {e}")
         raise
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+
+@app.get("/health")
+def health_check():
+    return {"message": "200 corriendo..."}
+
+

@@ -1,9 +1,12 @@
-"""Nodo 4: Parafraseo - Saves message, retrieves chat history, and paraphrases user input."""
+"""Nodo 4: Parafraseo - Saves message and paraphrases user input using chat history."""
 
 import json
 import logging
+from uuid import UUID
 
 from app.agents.state import AgentState
+from app.core.database_connection import SessionLocal
+from app.services.chat import save_user_message
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
@@ -14,21 +17,22 @@ llm = ChatOpenAI(model="gpt-5-nano")
 
 def parafraseo(state: AgentState) -> AgentState:
     """
-    Parafraseo node - Saves message to DB, retrieves chat history, and paraphrases user input.
+    Parafraseo node - Saves message to DB and paraphrases user input using chat history.
 
     This node:
     1. Receives a validated user message (after guard_inicial validation)
-    2. Saves the user's message to the chat session in PostgreSQL (endpoint 1 - placeholder)
-    3. Retrieves the last 10 messages of the conversation (endpoint 2 - placeholder)
-    4. Uses the last message to understand user's intentions and the remaining 9 (older) messages as context
+    2. Saves the user's message to the chat session in PostgreSQL using save_user_message service
+    3. Uses chat history (already retrieved by agent_host) as context
+    4. Uses the last message to understand user's intentions and chat history as context
     5. Sends to LLM with instructions to return 3 differently phrased statements that encapsulate
        the user's intentions according to the last message and chat history
 
     Args:
-        state: Agent state containing validated user message, chat_session_id, and user_id
+        state: Agent state containing validated user message, chat_messages (from agent_host), 
+               chat_session_id (optional - creates new session if not provided)
 
     Returns:
-        Updated state with chat_messages, paraphrased_text, and paraphrased_statements set
+        Updated state with chat_session_id (if new), paraphrased_text and paraphrased_statements
     """
     updated_state = state.copy()
     
@@ -43,31 +47,44 @@ def parafraseo(state: AgentState) -> AgentState:
     last_user_message = messages[-1]
     user_message_content = last_user_message.content if hasattr(last_user_message, 'content') else str(last_user_message)
     
-    # TODO: Endpoint 1 - Save message to PostgreSQL database according to chat session
-    # This should:
-    # 1. Call an endpoint (not yet developed) that:
-    #    - Saves the current user message to the chat session in PostgreSQL
-    #    - Uses chat_session_id and user_id from state
-    #    - Returns success/failure status
-    # 2. Handle errors appropriately (session not found, permission denied, etc.)
-    logger.info("Endpoint 1 (save message to DB) not yet implemented - skipping")
+    # Save validated message to PostgreSQL database
+    chat_session_id = state.get("chat_session_id")
     
-    # TODO: Endpoint 2 - Retrieve last 10 messages of the conversation
-    # This should:
-    # 1. Call an endpoint (not yet developed) that:
-    #    - Retrieves the last 10 messages for the chat session
-    #    - Returns a list of message dictionaries with structure: [{"sender": "user|assistant|system", "message": "...", "created_at": "..."}, ...]
-    #    - Messages should be ordered from oldest to newest (or newest to oldest, depending on API design)
-    # 2. Update state with chat_messages from the endpoint response
-    # 3. Handle errors appropriately (session not found, permission denied, etc.)
+    try:
+        # Convert session_id to UUID if provided
+        session_uuid = UUID(chat_session_id) if chat_session_id and isinstance(chat_session_id, str) else chat_session_id
+        
+        db = SessionLocal()
+        try:
+            # Save the user message to the database
+            saved_message, resulting_session_id = save_user_message(
+                db=db,
+                message=user_message_content,
+                session_id=session_uuid
+            )
+            
+            # Update state with session_id (important for new sessions)
+            updated_state["chat_session_id"] = str(resulting_session_id)
+            
+            logger.info(f"Saved user message (ID: {saved_message.id}) to session {resulting_session_id}")
+            
+        finally:
+            db.close()
+            
+    except ValueError as e:
+        # Session not found or invalid
+        logger.error(f"Error saving message: {e}")
+        updated_state["error_message"] = f"Failed to save message: {str(e)}"
+        return updated_state
+    except Exception as e:
+        # Other database errors
+        logger.error(f"Unexpected error saving message: {e}", exc_info=True)
+        updated_state["error_message"] = f"Failed to save message: {str(e)}"
+        return updated_state
     
-    # Placeholder: For now, we'll simulate chat history with just the current message
-    # Once the endpoint is implemented, replace this with the actual endpoint call
-    chat_messages = [
-        {"sender": "user", "message": user_message_content, "created_at": "2025-01-01T00:00:00"}
-    ]
-    updated_state["chat_messages"] = chat_messages
-    logger.warning("Endpoint 2 (retrieve chat history) not yet implemented - using current message only")
+    # Get chat history from state (already retrieved by agent_host)
+    chat_messages = state.get("chat_messages", [])
+    logger.info(f"Using {len(chat_messages)} chat messages from state (retrieved by agent_host)")
     
     # Process chat history: last message (intentions) + 9 older messages (context)
     # The last message is the most recent one (for understanding intentions)

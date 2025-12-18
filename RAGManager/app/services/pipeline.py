@@ -9,31 +9,7 @@ from app.services.vector_store import store_chunks_with_embeddings
 
 logger = logging.getLogger(__name__)
 
-
-def _create_document_record(filename: str, minio_path: str) -> int:
-    """
-    Create a Document record in the database.
-
-    Args:
-        filename: Original filename of the PDF
-        minio_path: Path to the PDF in MinIO bucket
-
-    Returns:
-        int: The created document's ID
-    """
-    db = SessionLocal()
-    try:
-        document = Document(filename=filename, minio_path=minio_path)
-        db.add(document)
-        db.commit()
-        db.refresh(document)
-        logger.info(f"Created document record with id={document.id}")
-        return document.id
-    finally:
-        db.close()
-
-
-def process_pdf_pipeline(object_name: str) -> int:
+def process_pdf_pipeline(object_name: str):
     """
     Orchestrates the PDF processing pipeline.
 
@@ -73,20 +49,13 @@ def process_pdf_pipeline(object_name: str) -> int:
         # Extract filename from object_name (e.g., "folder/file.pdf" -> "file.pdf")
         filename = object_name.split("/")[-1] if "/" in object_name else object_name
 
-        # Create document record in the documents table
-        document_id = _create_document_record(filename=filename, minio_path=object_name)
-
         # Store chunks with embeddings using PGVector
         # This generates embeddings via OpenAI and stores in the vector database
         chunks_stored = store_chunks_with_embeddings(
-            document_id=document_id,
             filename=filename,
             chunks=chunks,
         )
         logger.info(f"Stage 3 completed successfully. Stored {chunks_stored} chunks with embeddings")
-
-        logger.info(f"Pipeline completed successfully. Document ID: {document_id}")
-        return document_id
 
     except Exception as e:
         logger.error(f"Error in PDF processing pipeline: {e}")
