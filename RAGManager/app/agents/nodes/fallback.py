@@ -34,7 +34,7 @@ def fallback(state: AgentState) -> AgentState:
     
     messages = [
         SystemMessage(
-            content="Tu tarea es generar un mensaje de error en el lenguaje del usario para el usuario, explicando que la base de datos no tiene la información necesaria para responder a lo que preguntó."
+            content="Tu tarea es generar un mensaje de error en el lenguaje del usuario para el usuario, explicando que la base de datos no tiene la información necesaria para responder a lo que preguntó."
         )
     ] + state["messages"]
     error_message = llm.invoke(messages)
