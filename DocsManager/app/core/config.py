@@ -29,14 +29,18 @@ class Settings(BaseSettings):
     minio_access_key: str
     minio_secret_key: str
     minio_bucket: str = "documents"
+    minio_folder: str = "rag-docs"
     minio_use_ssl: bool = True
-
+  
     # Database Configuration (for SQLAlchemy)
     database_url: str = ""
 
     # RabbitMQ Queue/Exchange
     rabbitmq_queue_name: str = "document.process"
     rabbitmq_exchange_name: str = "minio-events"
+
+    # RAGManager Configuration
+    ragmanager_url: str = "http://localhost:8001"  # URL of the RAGManager service
 
     model_config = SettingsConfigDict(
         env_file=".env",

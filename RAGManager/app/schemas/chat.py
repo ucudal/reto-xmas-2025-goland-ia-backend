@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from uuid import UUID
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -27,3 +28,16 @@ class ChatHistoryResponse(BaseModel):
     session_id: UUID
     messages: list[ChatMessageResponse]
     count: int
+
+
+class ProcessMessageRequest(BaseModel):
+    """Request schema for processing a message through the agent."""
+
+    message: str
+    session_id: Optional[UUID] = None
+
+
+class ProcessMessageResponse(BaseModel):
+    """Response schema for processed message."""
+
+    message: str

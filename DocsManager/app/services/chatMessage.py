@@ -1,10 +1,13 @@
 from sqlalchemy.orm import Session
 from typing import AsyncIterator
 from uuid import uuid4
+import httpx
+import logging
 
 from app.models.chat_message import ChatMessage
 from app.schemas.enums.sender_type import SenderType
 from app.models.chat_session import ChatSession
+from app.core.config import settings
 from ag_ui.core import (
     RunAgentInput,
     RunStartedEvent,
@@ -20,9 +23,46 @@ from ag_ui.encoder import (
     EventEncoder
 )
 
+logger = logging.getLogger(__name__)
 
-def assistant_reply(text: str) -> str:
-    return f"Respuesta del asistente a: {text}"
+
+async def call_ragmanager_agent(message: str, session_id: str = None) -> str:
+    """
+    Call the RAGManager service to process a message through the LangGraph agent.
+    
+    Args:
+        message: User's message to process
+        session_id: Optional session ID for conversation context
+        
+    Returns:
+        Generated assistant response
+        
+    Raises:
+        httpx.HTTPError: If the request to RAGManager fails
+    """
+    url = f"{settings.ragmanager_url}/chat/process"
+    
+    payload = {
+        "message": message,
+        "session_id": session_id
+    }
+    
+    logger.info(f"Calling RAGManager at {url} with session_id: {session_id}")
+    
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post(url, json=payload)
+            response.raise_for_status()
+            
+            data = response.json()
+            assistant_message = data.get("message", "")
+            
+            logger.info("Successfully received response from RAGManager")
+            return assistant_message
+            
+        except httpx.HTTPError as e:
+            logger.error(f"Error calling RAGManager: {e}")
+            raise
 
 
 def create_user_message(
@@ -30,6 +70,24 @@ def create_user_message(
     message: str,
     session_id=None
 ):
+    """
+    Create a user message and get response from RAGManager agent.
+    
+    This function:
+    1. Creates or retrieves a chat session
+    2. Saves the user's message to the database
+    3. Calls RAGManager to process the message through the agent
+    4. Saves the assistant's response to the database
+    5. Returns the assistant message and session_id
+    
+    Args:
+        db: Database session
+        message: User's message text
+        session_id: Optional existing session ID
+        
+    Returns:
+        Tuple of (assistant_msg, session_id)
+    """
     # 1. Si no hay session_id → crear sesión nueva
     if not session_id:
         session = ChatSession()
@@ -48,10 +106,31 @@ def create_user_message(
         message=message
     )
     db.add(user_msg)
+    db.commit()  # Commit user message first
+    
+    try:
+        # 3. Call RAGManager agent to process the message
+        # Note: This is a sync function but we need async call
+        # We'll use asyncio to run it
+        import asyncio
+        
+        # Get or create event loop
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        assistant_text = loop.run_until_complete(
+            call_ragmanager_agent(message, str(session_id))
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting response from RAGManager: {e}")
+        # Fallback response in case of error
+        assistant_text = "I'm sorry, I'm having trouble processing your request right now. Please try again later."
 
-    # 3. Respuesta del asistente
-    assistant_text = assistant_reply(message)
-
+    # 4. Save assistant response
     assistant_msg = ChatMessage(
         session_id=session_id,
         sender=SenderType.assistant,
