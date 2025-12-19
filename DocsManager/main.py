@@ -3,6 +3,8 @@ from fastapi import FastAPI
 
 from app.api.routes import admin, base
 from app.core.db_connection import init_db
+# Import models to ensure SQLAlchemy can resolve relationships
+from app.models import Document, DocumentChunk  # noqa: F401
 
 # Configure logging
 logging.basicConfig(

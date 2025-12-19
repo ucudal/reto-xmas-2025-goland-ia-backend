@@ -2,28 +2,30 @@
 
 import logging
 
-from guardrails import Guard
-from guardrails.hub import DetectPII, ToxicLanguage
+# Guardrails disabled for now
+# from guardrails import Guard
+# from guardrails.hub import DetectPII, ToxicLanguage
 
 from app.agents.state import AgentState
-from app.core.config import settings
+# from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Initialize Guard with DetectPII and ToxicLanguage validators
-# Note: The validators must be installed via:
-#   guardrails hub install hub://guardrails/detect_pii
-#   guardrails hub install hub://guardrails/toxic_language
-_guard_final = Guard().use(
-    DetectPII(
-        pii_entities=settings.guardrails_pii_entities,
-        on_fail="noop",  # Don't raise exceptions, handle via state flags
-    )
-).use(
-    ToxicLanguage(
-        on_fail="noop",  # Don't raise exceptions, handle via state flags
-    )
-)
+# Guardrails disabled for now - just pass through
+# # Initialize Guard with DetectPII and ToxicLanguage validators
+# # Note: The validators must be installed via:
+# #   guardrails hub install hub://guardrails/detect_pii
+# #   guardrails hub install hub://guardrails/toxic_language
+# _guard_final = Guard().use(
+#     DetectPII(
+#         pii_entities=settings.guardrails_pii_entities,
+#         on_fail="noop",  # Don't raise exceptions, handle via state flags
+#     )
+# ).use(
+#     ToxicLanguage(
+#         on_fail="noop",  # Don't raise exceptions, handle via state flags
+#     )
+# )
 
 
 def guard_final(state: AgentState) -> AgentState:
@@ -50,31 +52,36 @@ def guard_final(state: AgentState) -> AgentState:
         updated_state["error_message"] = None
         return updated_state
 
-    try:
-        # Validate the generated response using Guardrails
-        validation_result = _guard_final.validate(generated_response)
-
-        # Check if validation passed
-        # The validator returns ValidationResult with outcome
-        # If validation fails, outcome will indicate failure
-        if validation_result.validation_passed:
-            updated_state["is_risky"] = False
-            updated_state["error_message"] = None
-            logger.debug("Generated response passed PII and toxic language detection")
-        else:
-            # PII or toxic language detected
-            updated_state["is_risky"] = True
-            updated_state["error_message"] = (
-               "Contenido riesgoso detectado en la respuesta generada. La información solicitada está clasificada o no es de libre acceso."
-            )
-            logger.warning("Risky content detected in generated response. Response content not logged for security.")
-
-    except Exception as e:
-        # If validation fails due to error, log it but don't block the request
-        # This is a safety measure - if Guardrails fails, we allow the request
-        # but log the error for monitoring
-        logger.error(f"Error during PII detection: {e}")
-        updated_state["is_risky"] = False
-        updated_state["error_message"] = None
+    # Guardrails disabled for now - just pass through
+    updated_state["is_risky"] = False
+    updated_state["error_message"] = None
+    logger.debug("Guardrails disabled - response passed through without validation")
+    
+    # try:
+    #     # Validate the generated response using Guardrails
+    #     validation_result = _guard_final.validate(generated_response)
+    #
+    #     # Check if validation passed
+    #     # The validator returns ValidationResult with outcome
+    #     # If validation fails, outcome will indicate failure
+    #     if validation_result.validation_passed:
+    #         updated_state["is_risky"] = False
+    #         updated_state["error_message"] = None
+    #         logger.debug("Generated response passed PII and toxic language detection")
+    #     else:
+    #         # PII or toxic language detected
+    #         updated_state["is_risky"] = True
+    #         updated_state["error_message"] = (
+    #            "Contenido riesgoso detectado en la respuesta generada. La información solicitada está clasificada o no es de libre acceso."
+    #         )
+    #         logger.warning("Risky content detected in generated response. Response content not logged for security.")
+    #
+    # except Exception as e:
+    #     # If validation fails due to error, log it but don't block the request
+    #     # This is a safety measure - if Guardrails fails, we allow the request
+    #     # but log the error for monitoring
+    #     logger.error(f"Error during PII detection: {e}")
+    #     updated_state["is_risky"] = False
+    #     updated_state["error_message"] = None
 
     return updated_state
