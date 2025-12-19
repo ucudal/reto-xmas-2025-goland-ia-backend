@@ -2,7 +2,7 @@ import logging
 import threading
 
 from fastapi import FastAPI
-
+from app.api.routes.chatMessage import router as chat_router
 from app.api.routes import router as api_router
 from app.api.routes.base import router as base_router
 from app.core.database_connection import init_db
@@ -21,6 +21,9 @@ app.include_router(base_router)
 
 # Versioned API routes
 app.include_router(api_router)
+
+# Virtual Assistant routes
+app.include_router(chat_router)
 
 @app.on_event("startup")
 async def startup_event():

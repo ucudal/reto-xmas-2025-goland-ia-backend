@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.core.db_connection import get_db
+from app.core.database_connection import get_db
 from ag_ui.core import RunAgentInput
 from app.services.chatMessage import process_agent_message
 

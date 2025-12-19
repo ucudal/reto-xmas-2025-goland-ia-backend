@@ -2,7 +2,6 @@ import logging
 from fastapi import FastAPI
 
 from app.api.routes import admin, base
-from app.api.routes.chatMessage import router as chat_router
 from app.core.db_connection import init_db
 
 # Configure logging
@@ -16,7 +15,6 @@ app = FastAPI(title="Docs Manager API", version="0.1.0")
 # Include routers
 app.include_router(base.router)
 app.include_router(admin.router)
-app.include_router(chat_router)
 
 @app.on_event("startup")
 async def startup_event():
