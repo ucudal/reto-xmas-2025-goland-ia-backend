@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     minio_secret_key: str
     minio_bucket: str = "documents"
     minio_use_ssl: bool = True
+    minio_folder: str = "rag-docs"  # Folder within bucket for RAG documents
 
     # Database Configuration (for SQLAlchemy)
     database_url: str = ""

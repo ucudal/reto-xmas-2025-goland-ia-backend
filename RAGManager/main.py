@@ -2,7 +2,8 @@ import logging
 import threading
 
 from fastapi import FastAPI
-
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes.chatMessage import router as chat_router
 from app.api.routes import router as api_router
 from app.api.routes.base import router as base_router
 from app.core.database_connection import init_db
@@ -16,11 +17,23 @@ logging.basicConfig(
 
 app = FastAPI(title="RAG Manager API", version="0.1.0")
 
+# Configure CORS - Allow any localhost or 127.0.0.1 with any port
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],  # Includes OPTIONS
+    allow_headers=["*"],
+)
+
 # Global (non-versioned) routes
 app.include_router(base_router)
 
 # Versioned API routes
 app.include_router(api_router)
+
+# Virtual Assistant routes
+app.include_router(chat_router)
 
 @app.on_event("startup")
 async def startup_event():
