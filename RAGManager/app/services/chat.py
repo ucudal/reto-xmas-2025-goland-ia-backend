@@ -5,7 +5,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.chat import ChatMessage, ChatSession
+from app.models.chat_message import ChatMessage
+from app.models.chat_session import ChatSession
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +68,15 @@ def save_user_message(db: Session, message: str, session_id: UUID | None = None)
         session_id = session.id
         logger.info(f"Created new chat session: {session_id}")
     else:
-        # Validate that the session exists
+        # Validate that the session exists, or create it if it doesn't
         session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
         if not session:
-            raise ValueError(f"Chat session {session_id} not found")
+            # Session doesn't exist - create it (for AG-UI protocol compatibility)
+            logger.info(f"Session {session_id} not found, creating new session with provided UUID")
+            session = ChatSession(id=session_id)
+            db.add(session)
+            db.flush()  # Generate UUID without committing
+            logger.info(f"Created new chat session with provided UUID: {session_id}")
 
     # 2. Create and save the user message
     user_message = ChatMessage(

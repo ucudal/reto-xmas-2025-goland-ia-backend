@@ -1,9 +1,11 @@
 import logging
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, base
-from app.api.routes.chatMessage import router as chat_router
 from app.core.db_connection import init_db
+# Import models to ensure SQLAlchemy can resolve relationships
+from app.models import Document, DocumentChunk  # noqa: F401
 
 # Configure logging
 logging.basicConfig(
@@ -13,10 +15,18 @@ logging.basicConfig(
 
 app = FastAPI(title="Docs Manager API", version="0.1.0")
 
+# Configure CORS - Allow any localhost or 127.0.0.1 with any port
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],  # Includes OPTIONS
+    allow_headers=["*"],
+)
+
 # Include routers
 app.include_router(base.router)
 app.include_router(admin.router)
-app.include_router(chat_router)
 
 @app.on_event("startup")
 async def startup_event():
