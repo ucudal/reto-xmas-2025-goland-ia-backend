@@ -50,28 +50,6 @@ jobs:
         working-directory: backend
         run: docker-compose up -d docs-manager rag-manager
 
-      - name: Wait for docs-manager to be ready
-        run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:8000/docs; then
-              echo "docs-manager is up!"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "docs-manager did not start in time" && exit 1
-
-      - name: Wait for rag-manager to be ready
-        run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:8001/docs; then
-              echo "rag-manager is up!"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "rag-manager did not start in time" && exit 1
-
       - name: Install QA dependencies
         working-directory: qa
         run: |
