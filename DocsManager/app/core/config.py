@@ -25,10 +25,10 @@ class Settings(BaseSettings):
     rabbitmq_management_port: int = 15672
 
     # MinIO Configuration
-    minio_endpoint: str
-    minio_access_key: str
-    minio_secret_key: str
-    minio_bucket: str = "documents"
+    minio_endpoint: str 
+    minio_access_key: str 
+    minio_secret_key: str 
+    minio_bucket: str = "goland-bucket"
     minio_use_ssl: bool = True
 
     # Database Configuration (for SQLAlchemy)
