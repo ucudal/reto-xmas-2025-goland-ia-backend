@@ -5,7 +5,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.models.chat import ChatMessage, ChatSession
+from app.models.chat_message import ChatMessage
+from app.models.chat_session import ChatSession
 
 logger = logging.getLogger(__name__)
 

@@ -48,6 +48,7 @@ services:
       - PYTHONUNBUFFERED=1
       - SERVICE_NAME=rag-manager
       - SERVICE_ROLE=document-processor
+      - RABBITMQ_HOST=rabbitmq
     networks:
       - app-network
   # PostgreSQL con pgvector
