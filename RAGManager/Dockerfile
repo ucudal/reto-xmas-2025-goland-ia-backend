@@ -21,9 +21,6 @@ RUN uv sync --no-dev --no-cache
 
 COPY . .
 
-# Ensure dependencies are synced after copying files
-RUN uv sync --no-dev --no-cache
-
 # Configure Guardrails with API key (creates .guardrailsrc)
 RUN uv run guardrails configure --enable-metrics --enable-remote-inferencing --token "$GUARDRAILS_API_KEY"
 
