@@ -4,9 +4,7 @@ on:
   pull_request:
     branches:
       - main
-      - devops
   workflow_dispatch:
-      - devops
 
 jobs:
   regression-test:
