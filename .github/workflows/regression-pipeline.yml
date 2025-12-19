@@ -46,10 +46,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install docker-compose -y
 
+      - name: Set GUARDRAILS_API_KEY env file
+        working-directory: backend
+        run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
+
       - name: Build and start backend app
         working-directory: backend
-        run: |
-          docker-compose up -d docs-manager
+        run: docker-compose up -d docs-manager
 
       - name: Wait for backend to be ready
         run: |
