@@ -52,8 +52,8 @@ jobs:
         run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
 
       - name: Set GUARDRAILS_API_KEY env file (DocsManager)
-          working-directory: backend/DocsManager
-          run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
+        working-directory: backend/DocsManager
+        run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
 
       - name: Set GUARDRAILS_API_KEY env file (backend)
         working-directory: backend
