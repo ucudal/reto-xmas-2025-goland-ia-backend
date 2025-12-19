@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 
 from app.schemas.enums.sender_type import SenderType
 
-from app.core.db_connection import Base
+from app.core.database_connection import Base
 
 
 class ChatMessage(Base):
