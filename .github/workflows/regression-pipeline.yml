@@ -6,6 +6,7 @@ on:
       - main
       - devops
   workflow_dispatch:
+      - devops
 
 jobs:
   regression-test:
