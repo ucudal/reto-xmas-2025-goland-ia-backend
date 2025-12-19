@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     )
 
     # Guardrails Configuration
+    guardrails_api_key: str
     guardrails_jailbreak_threshold: float = Field(
         default=0.9,
         ge=0.0,
