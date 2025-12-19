@@ -3,6 +3,9 @@ name: Regression Validation Pipeline
 on:
   pull_request:
     branches:
+        - name: Set GUARDRAILS_API_KEY env file (DocsManager)
+          working-directory: backend/DocsManager
+          run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
       - main
   workflow_dispatch:
 
