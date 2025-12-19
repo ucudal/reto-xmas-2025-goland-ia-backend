@@ -1,5 +1,6 @@
 import logging
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, base
 from app.core.db_connection import init_db
@@ -13,6 +14,15 @@ logging.basicConfig(
 )
 
 app = FastAPI(title="Docs Manager API", version="0.1.0")
+
+# Configure CORS - Allow any localhost or 127.0.0.1 with any port
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],  # Includes OPTIONS
+    allow_headers=["*"],
+)
 
 # Include routers
 app.include_router(base.router)
