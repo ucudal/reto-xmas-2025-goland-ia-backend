@@ -46,21 +46,33 @@ jobs:
           sudo apt-get update
           sudo apt-get install docker-compose -y
 
+
+      - name: Set GUARDRAILS_API_KEY env file (RAGManager)
+        working-directory: backend/RAGManager
+        run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
+
+      - name: Set GUARDRAILS_API_KEY env file (DocsManager)
+          working-directory: backend/DocsManager
+          run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
+
+      - name: Set GUARDRAILS_API_KEY env file (backend)
+        working-directory: backend
+        run: echo "GUARDRAILS_API_KEY=${{ secrets.GUARDRAILS_API_KEY }}" > .env
+
       - name: Build and start backend app
         working-directory: backend
-        run: |
-          docker-compose up -d docs-manager
+        run: docker-compose up -d docs-manager
 
       - name: Wait for backend to be ready
         run: |
           for i in {1..30}; do
             if curl -s http://localhost:8000/docs; then
-              echo "Backend is up!"
+              echo "RAGManager is up!"
               exit 0
             fi
             sleep 2
           done
-          echo "Backend did not start in time" && exit 1
+          echo "RAGManager did not start in time" && exit 1
 
       - name: Install QA dependencies
         working-directory: qa
