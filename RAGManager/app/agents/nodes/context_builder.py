@@ -55,7 +55,7 @@ def context_builder(state: AgentState) -> AgentState:
         logger.warning("No relevant chunks found for context building")
     
     # Create enriched query combining paraphrased text and context
-   enriched_query = f"""Pregunta del usuario: {paraphrased}
+    enriched_query = f"""Pregunta del usuario: {paraphrased}
 
 Contexto relevante de la base de conocimiento:
 {context_section}
