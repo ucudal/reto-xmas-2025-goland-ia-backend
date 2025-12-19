@@ -52,7 +52,7 @@ jobs:
       - name: Wait for backend to be ready
         run: |
           for i in {1..30}; do
-            if curl -s http://localhost:8000/docs; then
+            if curl -s http://localhost:8000/health; then
               echo "RAGManager is up!"
               exit 0
             fi
